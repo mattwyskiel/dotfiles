@@ -1,0 +1,9 @@
+[window]
+padding = { x = 20, y = 25 }
+decorations = "Transparent"
+opacity = 0.85
+blur = true
+
+[font]
+size = 14
+normal = { family = "Hack Nerd Font Mono", style = "Regular" }
