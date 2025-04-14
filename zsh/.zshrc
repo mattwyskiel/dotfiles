@@ -26,5 +26,8 @@ autoload -Uz compinit
 compinit
 # End of Docker CLI completions
 
+# run 'git pull' on the dotfiles repo
+git -C ~/dotfiles pull
+
 eval "$(oh-my-posh init zsh --config $(brew --prefix oh-my-posh)/themes/avit.omp.json)"
 
