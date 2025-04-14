@@ -60,6 +60,26 @@ else
     echo "Tmux is already installed."
 fi
 
+
+# Install neovim
+if ! command -v nvim &> /dev/null; then
+    echo "Neovim not found. Installing..."
+    brew install neovim
+else
+    echo "Neovim is already installed."
+fi
+# Install ripgrep
+if ! command -v rg &> /dev/null; then
+    echo "Ripgrep not found. Installing..."
+    brew install ripgrep
+else
+    echo "Ripgrep is already installed."
+fi
+
+echo "Symlinking neovim config..."
+stow --dir="$HOME/dotfiles" --target="$HOME" nvim
+echo "...done."
+
 echo "Symlinking zsh config..."
 stow --dir="$HOME/dotfiles" --target="$HOME" zsh
 echo "...done."
