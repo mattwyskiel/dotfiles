@@ -423,6 +423,7 @@ require('lazy').setup({
       'williamboman/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
 
+      'b0o/schemastore.nvim',
       -- Useful status updates for LSP.
       { 'j-hui/fidget.nvim', opts = {} },
 
@@ -597,7 +598,28 @@ require('lazy').setup({
             },
           },
         },
-        yamlls = {},
+        yamlls = {
+          settings = {
+            yaml = {
+              schemaStore = {
+                -- You must disable built-in schemaStore support if you want to use
+                -- this plugin and its advanced options like `ignore`.
+                enable = false,
+                -- Avoid TypeError: Cannot read properties of undefined (reading 'length')
+                url = '',
+              },
+              schemas = require('schemastore').yaml.schemas(),
+            },
+          },
+        },
+        jsonls = {
+          settings = {
+            json = {
+              schemas = require('schemastore').json.schemas(),
+              validate = { enable = true },
+            },
+          },
+        },
         yamllint = {},
       }
       require('lspconfig').gh_actions_ls.setup {}
@@ -636,7 +658,7 @@ require('lazy').setup({
       }
     end,
   },
-
+  'b0o/schemastore.nvim',
   { -- Autoformat
     'stevearc/conform.nvim',
     event = { 'BufWritePre' },
