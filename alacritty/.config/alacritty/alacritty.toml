@@ -3,6 +3,7 @@ padding = { x = 20, y = 25 }
 decorations = "Transparent"
 opacity = 0.85
 blur = true
+startup_mode = "Fullscreen"
 
 [font]
 size = 14
