@@ -29,6 +29,7 @@ compinit
 # run 'git pull' on the dotfiles repo
 echo "Updating dotfiles..."
 git -C ~/dotfiles pull
+clear
 
 eval "$(oh-my-posh init zsh --config $(brew --prefix oh-my-posh)/themes/avit.omp.json)"
 
