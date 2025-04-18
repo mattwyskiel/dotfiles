@@ -31,5 +31,7 @@ echo "Updating dotfiles..."
 git -C ~/dotfiles pull
 clear
 
+alias refresh="$HOME/dotfiles/init.sh"
+
 eval "$(oh-my-posh init zsh --config $(brew --prefix oh-my-posh)/themes/avit.omp.json)"
 
