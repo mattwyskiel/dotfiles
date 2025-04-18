@@ -60,6 +60,9 @@ else
     echo "Tmux is already installed."
 fi
 
+echo "Symlinking tmux config..."
+stow --dir="$HOME/dotfiles" --target="$HOME" tmux
+echo "...done."
 
 # Install neovim
 if ! command -v nvim &> /dev/null; then
