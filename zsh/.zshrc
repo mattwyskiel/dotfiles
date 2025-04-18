@@ -32,6 +32,7 @@ git -C ~/dotfiles pull
 clear
 
 alias refresh="$HOME/dotfiles/init.sh"
+alias vopen="$HOME/dotfiles/scripts/vopen.sh"
 
 eval "$(oh-my-posh init zsh --config $(brew --prefix oh-my-posh)/themes/avit.omp.json)"
 
