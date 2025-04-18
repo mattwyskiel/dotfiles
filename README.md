@@ -21,12 +21,12 @@ The goal here is to be as machine-agnostic as possible, so that I can have a sea
         - The Bourne-again shell for installation (i.e. bash)
     - [Linux or WSL](https://docs.brew.sh/Homebrew-on-Linux#requirements)
         - Debian or Ubuntu
-            `sudo apt-get install build-essential procps curl file git`
+            - `sudo apt-get install build-essential procps curl file git`
         - Fedora, CentOS, or Red Hat
-            `sudo yum groupinstall 'Development Tools'`
-            `sudo yum install procps-ng curl file git`
+            - `sudo yum groupinstall 'Development Tools'`
+            - `sudo yum install procps-ng curl file git`
         - Arch Linux
-            `sudo pacman -S base-devel procps-ng curl file git`
+            - `sudo pacman -S base-devel procps-ng curl file git`
 
 ### Steps
 1. Clone this repository to your local machine:
