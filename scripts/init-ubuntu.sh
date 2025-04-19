@@ -76,7 +76,7 @@ if [ ! -L "$HOME/.zshrc" ]; then
     echo "Removing existing .zshrc..."
     rm -f "$HOME/.zshrc"
 fi
-ln -s "$HOME/.zshrc.macos" "$HOME/.zshrc"
+ln -s "$HOME/.zshrc.ubuntu" "$HOME/.zshrc"
 echo "...done."
 
 echo "Symlinking git config..."
