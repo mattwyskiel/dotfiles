@@ -4,12 +4,12 @@ chmod +x ~/dotfiles/scripts/*.sh
 
 if [ "$(uname)" = "Darwin" ]; then
     echo "Detected macOS..."
-    ./scripts/init-macos.sh
+    $HOME/dotfiles/scripts/init-macos.sh
 elif grep -qi microsoft /proc/version 2>/dev/null; then
     echo "Detected WSL..."
 elif [ -f /etc/os-release ] && grep -qi ubuntu /etc/os-release; then
     echo "Detected Ubuntu..."
-    ./scripts/init-ubuntu.sh
+    $HOME/dotfiles/scripts/init-ubuntu.sh
 else
     echo "Other/Unknown"
 fi

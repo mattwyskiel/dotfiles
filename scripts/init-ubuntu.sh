@@ -35,7 +35,7 @@ echo "...done."
 # Install neovim
 if ! command -v nvim &> /dev/null; then
     echo "Neovim not found. Installing..."
-    sudo apt install neovim
+    $HOME/dotfiles/scripts/install-neovim-ubuntu.sh
 else
     echo "Neovim is already installed."
 fi
