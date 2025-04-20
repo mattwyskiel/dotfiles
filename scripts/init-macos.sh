@@ -84,13 +84,7 @@ stow --dir="$HOME/dotfiles" --target="$HOME" nvim
 echo "...done."
 
 echo "Symlinking zsh config..."
-stow --dir="$HOME/dotfiles" --target="$HOME" zsh
-# if it's not already a symlink, create a symlink to the Ubuntu zshrc
-if [ ! -L "$HOME/.zshrc" ]; then
-    echo "Removing existing .zshrc..."
-    rm -f "$HOME/.zshrc"
-fi
-ln -s "$HOME/.zshrc.macos" "$HOME/.zshrc"
+stow --dir="$HOME/dotfiles" --target="$HOME" zsh/macos
 echo "...done."
 
 echo "Symlinking git config..."

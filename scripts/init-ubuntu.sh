@@ -70,13 +70,7 @@ else
 fi
 
 echo "Symlinking zsh config..."
-stow --dir="$HOME/dotfiles" --target="$HOME" zsh
-# if it's not already a symlink, create a symlink to the macOS zshrc
-if [ ! -L "$HOME/.zshrc" ]; then
-    echo "Removing existing .zshrc..."
-    rm -f "$HOME/.zshrc"
-fi
-ln -s "$HOME/.zshrc.ubuntu" "$HOME/.zshrc"
+stow --dir="$HOME/dotfiles" --target="$HOME" zsh/ubuntu
 echo "...done."
 
 echo "Symlinking git config..."
