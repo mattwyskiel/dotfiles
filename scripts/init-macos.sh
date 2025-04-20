@@ -85,7 +85,7 @@ echo "...done."
 
 echo "Symlinking zsh config..."
 cd zsh
-stow --dir="$HOME/dotfiles/zsh" --target="$HOME" macos
+stow --target="$HOME" macos
 cd ..
 echo "...done."
 

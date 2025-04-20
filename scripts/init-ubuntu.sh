@@ -71,7 +71,7 @@ fi
 
 echo "Symlinking zsh config..."
 cd zsh
-stow --dir="$HOME/dotfiles/zsh" --target="$HOME" ubuntu
+stow --target="$HOME" ubuntu
 cd ..
 echo "...done."
 
