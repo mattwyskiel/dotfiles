@@ -70,7 +70,7 @@ else
 fi
 
 echo "Symlinking zsh config..."
-stow --dir="$HOME/dotfiles" --target="$HOME" zsh/ubuntu
+stow --dir="$HOME/dotfiles/zsh" --target="$HOME" ubuntu
 echo "...done."
 
 echo "Symlinking git config..."

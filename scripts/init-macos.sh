@@ -84,7 +84,7 @@ stow --dir="$HOME/dotfiles" --target="$HOME" nvim
 echo "...done."
 
 echo "Symlinking zsh config..."
-stow --dir="$HOME/dotfiles" --target="$HOME" zsh/macos
+stow --dir="$HOME/dotfiles/zsh" --target="$HOME" macos
 echo "...done."
 
 echo "Symlinking git config..."
