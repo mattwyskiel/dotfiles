@@ -27,7 +27,7 @@ compinit
 # End of Docker CLI completions
 
 alias init="$HOME/dotfiles/init.sh"
-alias refresh="$HOME/dotfiles/update-dotfiles.sh"
+alias refresh="$HOME/dotfiles/scripts/update-dotfiles.sh"
 alias vopen="$HOME/dotfiles/scripts/vopen.sh"
 
 # run 'git pull' on the dotfiles repo
