@@ -15,6 +15,8 @@ fi
 # Install oh-my-posh
 if ! command -v oh-my-posh &> /dev/null; then
     echo "Oh My Posh not found. Installing..."
+    echo "Installing dependencies..."
+    sudo apt install unzip
     curl -s https://ohmyposh.dev/install.sh | bash -s
 else
     echo "Oh My Posh is already installed."

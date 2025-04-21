@@ -5,6 +5,11 @@ The goal here is to be as machine-agnostic as possible, so that I can have a sea
 
 ## What's Included
 - `init.sh`: The main script that installs all the necessary packages and sets up the environment.
+- `scripts/`: Contains sub-scripts that are called by `init.sh` to perform specific tasks.
+    - `init-mac.sh`: Installs macOS-specific packages and configurations.
+    - `init-ubuntu.sh`: Installs Ubuntu-specific packages and configurations.
+    - `install-neovim-ubuntu.sh`: Installs Neovim and its dependencies on Ubuntu, from source.
+    - `vopen.sh`: A script to open a new split-pane tmux session (or attach to an existing one) and open the given directory in Neovim.
 - `zsh/`: Contains my `.zshrc` configuration
 - `git/`: Contains my `.gitconfig`
 - `nvim/`: Contains my Neovim configuration
@@ -12,23 +17,6 @@ The goal here is to be as machine-agnostic as possible, so that I can have a sea
 - `alacritty/`: Contains my Alacritty configuration (terminal emulator)
 
 ## Installation
-### Pre-requisites
-- The `init.sh` script will install homebrew, from which all other packages will be installed. Thus, you need to have the system requirements for Homebrew:
-    - [macOS](https://docs.brew.sh/Installation#macos-requirements)
-        - An Apple Silicon CPU or 64-bit Intel CPU
-        - macOS Ventura (13) (or higher) installed on officially supported hardware
-        - Command Line Tools (CLT) for Xcode (from xcode-select --install or https://developer.apple.com/download/all/) or Xcode
-        - The Bourne-again shell for installation (i.e. bash)
-    - [Linux or WSL](https://docs.brew.sh/Homebrew-on-Linux#requirements)
-        - Debian or Ubuntu
-            - `sudo apt-get install build-essential procps curl file git`
-        - Fedora, CentOS, or Red Hat
-            - `sudo yum groupinstall 'Development Tools'`
-            - `sudo yum install procps-ng curl file git`
-        - Arch Linux
-            - `sudo pacman -S base-devel procps-ng curl file git`
-
-### Steps
 1. Clone this repository to your local machine:
     ```bash
     git clone https://github.com/mattwyskiel/dotfiles.git

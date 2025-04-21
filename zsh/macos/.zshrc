@@ -26,13 +26,12 @@ autoload -Uz compinit
 compinit
 # End of Docker CLI completions
 
-# run 'git pull' on the dotfiles repo
-echo "Updating dotfiles..."
-git -C ~/dotfiles pull
-clear
-
-alias refresh="$HOME/dotfiles/init.sh"
+alias init="$HOME/dotfiles/init.sh"
+alias refresh="$HOME/dotfiles/update-dotfiles.sh"
 alias vopen="$HOME/dotfiles/scripts/vopen.sh"
+
+# run 'git pull' on the dotfiles repo
+refresh
 
 eval "$(oh-my-posh init zsh --config $(brew --prefix oh-my-posh)/themes/catppuccin_mocha.omp.json)"
 
