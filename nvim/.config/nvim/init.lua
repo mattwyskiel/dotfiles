@@ -2,6 +2,7 @@ require 'mattwyskiel.opts' -- general options
 
 require 'mattwyskiel.keymaps' -- keymaps
 require 'mattwyskiel.autocommands' -- autocommands
+require 'mattwyskiel.filetypes' -- filetypes
 
 require 'mattwyskiel.lazy' -- install lazy.nvim
 
@@ -18,6 +19,7 @@ require('lazy').setup({
   require 'mattwyskiel.plugins.lspconfig', -- LSP configuration
   'b0o/schemastore.nvim', -- JSON schema store
   require 'mattwyskiel.plugins.conform', -- LSP formatter
+  require 'mattwyskiel.plugins.lint', -- Linting
   require 'mattwyskiel.plugins.blink-cmp', -- Completion engine
 
   require 'mattwyskiel.plugins.tokyonight', -- Colorscheme
