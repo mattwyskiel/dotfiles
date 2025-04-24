@@ -27,10 +27,13 @@ require('lazy').setup({
   require 'mattwyskiel.plugins.mini', -- Mini.nvim for various small plugins
   require 'mattwyskiel.plugins.treesitter', -- Treesitter for syntax highlighting
 
+  require 'mattwyskiel.plugins.markdown',
   'github/copilot.vim', -- GitHub Copilot
 }, {
   ui = require 'mattwyskiel.lazy.ui', -- UI for lazy.nvim
 })
+
+require 'mattwyskiel.plugins.lint.autocmd'
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
