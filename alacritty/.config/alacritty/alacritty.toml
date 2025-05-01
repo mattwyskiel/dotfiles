@@ -4,6 +4,7 @@ decorations = "Transparent"
 opacity = 0.85
 blur = true
 startup_mode = "Fullscreen"
+dynamic_title = true
 
 [font]
 size = 14
