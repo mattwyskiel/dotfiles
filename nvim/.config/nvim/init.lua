@@ -28,7 +28,7 @@ require('lazy').setup({
   require 'mattwyskiel.plugins.treesitter', -- Treesitter for syntax highlighting
 
   require 'mattwyskiel.plugins.markdown',
-  'github/copilot.vim', -- GitHub Copilot
+  -- 'github/copilot.vim', -- GitHub Copilot
 }, {
   ui = require 'mattwyskiel.lazy.ui', -- UI for lazy.nvim
 })
