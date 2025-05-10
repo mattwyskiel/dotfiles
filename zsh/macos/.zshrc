@@ -33,5 +33,11 @@ alias vopen="$HOME/dotfiles/scripts/vopen.sh"
 # run 'git pull' on the dotfiles repo
 refresh
 
-eval "$(oh-my-posh init zsh --config $(brew --prefix oh-my-posh)/themes/catppuccin_mocha.omp.json)"
+# bun completions
+[ -s "/Users/matthewwyskiel/.bun/_bun" ] && source "/Users/matthewwyskiel/.bun/_bun"
 
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+eval "$(oh-my-posh init zsh --config $(brew --prefix oh-my-posh)/themes/catppuccin_mocha.omp.json)"
