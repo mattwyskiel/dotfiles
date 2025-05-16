@@ -7,7 +7,7 @@ require 'mattwyskiel.filetypes' -- filetypes
 require 'mattwyskiel.lazy' -- install lazy.nvim
 
 require('lazy').setup({
-  'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+  'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
   require 'mattwyskiel.plugins.gitsigns', -- Git signs in the gutter
   require 'mattwyskiel.plugins.which-key', -- Keymaps in a popup
   require 'mattwyskiel.plugins.neo-tree', -- File explorer
