@@ -3,13 +3,8 @@ return {
     'zbirenbaum/copilot.lua',
     cmd = { 'Copilot' },
     event = { 'InsertEnter' },
+    opts = {},
     config = function()
-      require('copilot').setup {
-        suggestion = {
-          auto_trigger = true,
-        },
-      }
-
       vim.api.nvim_create_autocmd('User', {
         pattern = 'BlinkCmpMenuOpen',
         callback = function()
