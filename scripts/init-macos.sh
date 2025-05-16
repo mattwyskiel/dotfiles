@@ -79,6 +79,13 @@ else
     echo "Ripgrep is already installed."
 fi
 
+if ! command -v fd &> /dev/null; then
+    echo "fd-find not found. Installing..."
+    brew install fd
+else
+    echo "fd-find is already installed."
+fi
+
 echo "Symlinking neovim config..."
 stow --dir="$HOME/dotfiles" --target="$HOME" nvim
 echo "...done."
