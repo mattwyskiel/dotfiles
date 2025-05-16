@@ -1,9 +1,21 @@
 return {
   'olimorris/codecompanion.nvim',
-  opts = {},
+  opts = {
+    extensions = {
+      mcphub = {
+        callback = 'mcphub.extensions.codecompanion',
+        opts = {
+          show_result_in_chat = true, -- Show the mcp tool result in the chat buffer
+          make_vars = true, -- make chat #variables from MCP server resources
+          make_slash_commands = true, -- make /slash_commands from MCP server prompts
+        },
+      },
+    },
+  },
   dependencies = {
     'nvim-lua/plenary.nvim',
     'nvim-treesitter/nvim-treesitter',
+    -- 'ravitemer/mcphub.nvim',
   },
   init = function()
     vim.keymap.set({ 'n', 'v' }, '<C-a>', '<cmd>CodeCompanionActions<cr>', { noremap = true, silent = true })
