@@ -35,7 +35,5 @@ require('lazy').setup({
   ui = require 'mattwyskiel.lazy.ui', -- UI for lazy.nvim
 })
 
-require 'mattwyskiel.plugins.lint.autocmd'
-
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
