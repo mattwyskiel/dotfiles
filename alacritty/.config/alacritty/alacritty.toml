@@ -1,9 +1,9 @@
 [window]
 padding = { x = 20, y = 30 }
 decorations = "Transparent"
-opacity = 0.85
+opacity = 0.90
 blur = true
-startup_mode = "Fullscreen"
+startup_mode = "Maximized"
 dynamic_title = true
 
 [font]
