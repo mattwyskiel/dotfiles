@@ -14,12 +14,7 @@ if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
     exit 0
 fi
 tmux new-session -d -c "$DIR" -s "$SESSION_NAME" # start detached session in DIR
-# Split horizontally (-v) so the new pane is below, focus goes to it
-tmux split-window -v -c "$DIR"
-# Resize the bottom pane (current pane) up by 15 lines (i.e. make it 15 lines tall)
-tmux resize-pane -D 15
-# Send 'nvim .' to the top pane (pane 0)
-tmux select-pane -t 0
+tmux new-window -dnterminal -c "$DIR" # create new window for editor
 tmux send-keys 'nvim .' C-m
 # Attach to session!
 tmux attach-session -t "$SESSION_NAME" 
