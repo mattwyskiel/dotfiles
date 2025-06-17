@@ -4,7 +4,7 @@ return {
     cmd = { 'Copilot' },
     event = { 'InsertEnter' },
     opts = {},
-    config = function()
+    init = function()
       vim.api.nvim_create_autocmd('User', {
         pattern = 'BlinkCmpMenuOpen',
         callback = function()

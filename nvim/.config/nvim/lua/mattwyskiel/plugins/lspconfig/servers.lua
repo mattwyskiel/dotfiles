@@ -12,6 +12,7 @@ local servers = {
   pyright = {},
   ts_ls = {},
   eslint = {},
+  cssls = {},
   tailwindcss = {},
   lua_ls = {
     settings = {

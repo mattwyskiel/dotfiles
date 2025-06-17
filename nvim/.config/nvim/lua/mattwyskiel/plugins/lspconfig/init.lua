@@ -43,6 +43,8 @@ return {
 
     local servers = require 'mattwyskiel.plugins.lspconfig.servers'
 
+    ---@type MasonLspconfigSettings
+    ---@diagnostic disable-next-line: missing-fields
     require('mason-lspconfig').setup {
       ensure_installed = {}, -- explicitly set to an empty table (already handled above)
       automatic_installation = false, -- already handled above
