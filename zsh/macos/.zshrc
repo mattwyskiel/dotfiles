@@ -40,4 +40,9 @@ refresh
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
+# if .config/vars.sh exists, run it such that its environment variables are exported and available in the current shell
+if [ -f "$HOME/.config/vars.sh" ]; then
+  . "$HOME/.config/vars.sh"
+fi
+
 eval "$(oh-my-posh init zsh --config $(brew --prefix oh-my-posh)/themes/catppuccin_mocha.omp.json)"
