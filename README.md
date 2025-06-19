@@ -6,10 +6,12 @@ The goal here is to be as machine-agnostic as possible, so that I can have a sea
 ## What's Included
 - `init.sh`: The main script that installs all the necessary packages and sets up the environment.
 - `scripts/`: Contains sub-scripts that are called by `init.sh` to perform specific tasks.
-    - `init-mac.sh`: Installs macOS-specific packages and configurations.
+    - `init-macos.sh`: Installs macOS-specific packages and configurations.
     - `init-ubuntu.sh`: Installs Ubuntu-specific packages and configurations.
     - `install-neovim-ubuntu.sh`: Installs Neovim and its dependencies on Ubuntu, from source.
-    - `vopen.sh`: A script to open a new split-pane tmux session (or attach to an existing one) and open the given directory in Neovim.
+    - `vopen.sh`: Creates a tmux session with Neovim and terminal windows, includes Claude Code integration.
+    - `aws-sso-check.sh`: Automatically manages AWS SSO authentication with support for multiple profiles.
+    - `update-dotfiles.sh`: Updates the dotfiles repository from remote (aliased as `refresh`).
 - `zsh/`: Contains my `.zshrc` configuration
 - `git/`: Contains my `.gitconfig`
 - `nvim/`: Contains my Neovim configuration

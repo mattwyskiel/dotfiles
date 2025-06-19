@@ -10,9 +10,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `refresh` - Alias for `$HOME/dotfiles/scripts/update-dotfiles.sh` to pull latest dotfiles changes
 
 ### Workflow Commands
-- `vopen [directory] [session_name]` - Creates/attaches to tmux session and opens directory in Neovim
+- `vopen [directory] [session_name]` - Creates/attaches to tmux session with Neovim and Claude Code
   - Usage: `vopen ~/projects/myapp` or `vopen` (defaults to current directory)
-  - Creates tmux session with terminal and editor windows
+  - Creates tmux session with Neovim in first window, terminal window with Claude Code split
+- `awscheck [-p profile] [--quiet]` - Checks and manages AWS SSO authentication
+  - Usage: `awscheck --quiet` (ideal for shell startup), `awscheck -p myprofile`
 
 ### Platform-Specific Setup
 - **macOS**: `scripts/init-macos.sh` - Uses Homebrew for package management
@@ -63,7 +65,8 @@ dotfiles/
 - Shell configs separated by platform in `zsh/` subdirectories
 
 ### Development Workflow Integration
-- **vopen.sh**: Core workflow script that creates tmux sessions with Neovim for project work
+- **vopen.sh**: Core workflow script that creates tmux sessions with Neovim and Claude Code integration
+- **aws-sso-check.sh**: Seamless AWS authentication with quiet mode for shell startup
 - **Auto-updates**: Shell automatically pulls latest dotfiles changes on startup
 - **One-command setup**: Fresh machine setup requires only running `./init.sh`
 - **Modular installation**: Each component (Alacritty, tmux, Neovim, etc.) installed and configured separately
