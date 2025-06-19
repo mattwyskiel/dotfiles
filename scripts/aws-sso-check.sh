@@ -43,6 +43,7 @@ perform_sso_login() {
 # Main logic
 main() {
     local profile=""
+    local quiet=false
     
     # Parse command line arguments
     while [[ $# -gt 0 ]]; do
@@ -51,9 +52,14 @@ main() {
                 profile="$2"
                 shift 2
                 ;;
+            -q|--quiet)
+                quiet=true
+                shift
+                ;;
             -h|--help)
-                echo "Usage: $0 [-p|--profile PROFILE_NAME]"
+                echo "Usage: $0 [-p|--profile PROFILE_NAME] [-q|--quiet]"
                 echo "  -p, --profile    Specify AWS profile to use"
+                echo "  -q, --quiet      Only show output if credentials are invalid"
                 echo "  -h, --help       Show this help message"
                 exit 0
                 ;;
@@ -67,27 +73,38 @@ main() {
     # Set AWS profile if specified
     if [ -n "$profile" ]; then
         export AWS_PROFILE="$profile"
-        echo -e "${YELLOW}Using AWS profile: $profile${NC}"
+        if [ "$quiet" = false ]; then
+            echo -e "${YELLOW}Using AWS profile: $profile${NC}"
+        fi
     fi
     
     # Check current credentials
-    echo "Checking AWS SSO credentials..."
+    if [ "$quiet" = false ]; then
+        echo "Checking AWS SSO credentials..."
+    fi
     
     if check_aws_credentials; then
-        echo -e "${GREEN}AWS SSO credentials are valid!${NC}"
-        
-        # Show current identity
-        echo "Current AWS identity:"
-        aws sts get-caller-identity --output table
+        if [ "$quiet" = false ]; then
+            echo -e "${GREEN}AWS SSO credentials are valid!${NC}"
+            
+            # Show current identity
+            echo "Current AWS identity:"
+            aws sts get-caller-identity --output table
+        fi
     else
         echo -e "${YELLOW}AWS SSO credentials are expired or invalid.${NC}"
         
-        # Attempt to login
-        if perform_sso_login "$profile"; then
-            echo "Current AWS identity:"
-            aws sts get-caller-identity --output table
-        else
+        if [ "$quiet" = true ]; then
+            echo "Run 'aws sso login' to authenticate."
             exit 1
+        else
+            # Attempt to login
+            if perform_sso_login "$profile"; then
+                echo "Current AWS identity:"
+                aws sts get-caller-identity --output table
+            else
+                exit 1
+            fi
         fi
     fi
 }

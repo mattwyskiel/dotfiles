@@ -97,11 +97,13 @@ Automatically detects and handles AWS SSO authentication.
 - Supports multiple AWS profiles
 - Shows current AWS identity after successful authentication
 - Provides colored output for better visibility
+- Quiet mode only shows output when credentials are invalid (ideal for shell startup checks)
 
 **Usage:**
 ```bash
 aws-sso-check.sh                    # Use default profile
 aws-sso-check.sh -p profile-name    # Use specific profile
+aws-sso-check.sh --quiet            # Quiet mode - only show output if credentials invalid
 aws-sso-check.sh --help             # Show help
 ```
 
