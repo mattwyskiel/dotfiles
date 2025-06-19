@@ -100,3 +100,7 @@ echo "Symlinking git config..."
 stow --dir="$HOME/dotfiles" --target="$HOME" git
 echo "...done."
 
+echo "Symlinking claude config..."
+stow --dir="$HOME/dotfiles" --target="$HOME" claude
+echo "...done."
+
