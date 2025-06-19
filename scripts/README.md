@@ -97,7 +97,7 @@ Automatically detects and handles AWS SSO authentication.
 - Supports multiple AWS profiles
 - Shows current AWS identity after successful authentication
 - Provides colored output for better visibility
-- Quiet mode only shows output when credentials are invalid (ideal for shell startup checks)
+- **Quiet mode**: Only shows output when credentials are invalid (ideal for shell startup checks)
 
 **Usage:**
 ```bash
