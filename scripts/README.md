@@ -61,7 +61,9 @@ Creates or attaches to a tmux session with Neovim for project development.
 
 **What it does:**
 - Creates a new tmux session in the specified directory (or current directory)
-- Opens a terminal window and an editor window with Neovim
+- Opens Neovim in the first window
+- Creates a second "terminal" window with a horizontal split
+- Automatically starts Claude Code in the right split of the terminal window
 - Attaches to existing session if one already exists with the same name
 - Session names default to the directory basename
 

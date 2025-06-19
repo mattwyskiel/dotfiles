@@ -14,7 +14,9 @@ if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
     exit 0
 fi
 tmux new-session -d -c "$DIR" -s "$SESSION_NAME" # start detached session in DIR
-tmux new-window -dnterminal -c "$DIR" # create new window for editor
 tmux send-keys 'nvim .' C-m
+tmux new-window -n terminal -c "$DIR" # create new window for terminal
+tmux split-window -h -c "$DIR" # split horizontally 
+tmux send-keys -t "$SESSION_NAME:terminal.1" 'claude' C-m # run claude in right pane
 # Attach to session!
 tmux attach-session -t "$SESSION_NAME" 
