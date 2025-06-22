@@ -56,3 +56,7 @@ Prefer to build mobile apps using Native Platforms instead of cross-platform eng
     - Prefer managed services over direct-server solutions (e.g. DynamoDB over, say, Aurora)
 - If explicitly asked to use something else, do that.
 - If there's something not available with the above tools, or that works better with another provider, get my feedback before moving forward.
+
+### Referencing Documentation
+If you do not know something, do not assume. Look up the documentation.
+If there is a tool or MCP server available to you specific to the tooling you're wondering about, use that. If context7 is available, use that. Otherwise, do a web search. I cannot stress this enough, don't assume!!

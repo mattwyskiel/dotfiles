@@ -29,3 +29,12 @@ The goal here is to be as machine-agnostic as possible, so that I can have a sea
     chmod +x init.sh
     ./init.sh
     ```
+
+## Key Commands After Setup
+- `init` - Alias for `$HOME/dotfiles/init.sh` (re-run full setup)
+- `refresh` - Alias for `$HOME/dotfiles/scripts/update-dotfiles.sh` (pull latest changes)
+- `vopen [directory] [session_name]` - Creates/attaches to tmux session with Neovim and Claude Code
+- `awscheck [-p profile] [--quiet]` - Checks and manages AWS SSO authentication
+
+## Architecture
+This repository uses **GNU Stow** for symlink management, organizing configurations by application. Each directory mirrors the target home directory structure. See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation and common modification patterns.

@@ -78,3 +78,10 @@ When modifying this repository:
 3. **New tools**: Add installation logic to platform-specific init scripts
 4. **Terminal appearance**: Modify `alacritty/.config/alacritty/alacritty.toml`
 5. **After changes**: Use `refresh` to pull updates or re-run `init` for full reinstall
+
+### Documentation Guidelines
+When uncertain about implementation details:
+- **Use available tools**: Leverage MCP servers and context7 for accurate documentation lookup
+- **Research first**: Always look up official documentation rather than making assumptions
+- **Web search as fallback**: Use web search when specific tooling documentation isn't available through MCP
+- **Verify accuracy**: Double-check implementation details against official sources
