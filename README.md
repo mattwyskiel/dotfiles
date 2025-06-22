@@ -37,4 +37,4 @@ The goal here is to be as machine-agnostic as possible, so that I can have a sea
 - `awscheck [-p profile] [--quiet]` - Checks and manages AWS SSO authentication
 
 ## Architecture
-This repository uses **GNU Stow** for symlink management, organizing configurations by application. Each directory mirrors the target home directory structure. See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation and common modification patterns.
+This repository uses **GNU Stow** for symlink management, organizing configurations by application. Each directory mirrors the target home directory structure. See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation, common modification patterns, and development guidelines including preferred project scaffolding tools.

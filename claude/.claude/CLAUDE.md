@@ -60,3 +60,19 @@ Prefer to build mobile apps using Native Platforms instead of cross-platform eng
 ### Referencing Documentation
 If you do not know something, do not assume. Look up the documentation.
 If there is a tool or MCP server available to you specific to the tooling you're wondering about, use that. If context7 is available, use that. Otherwise, do a web search. I cannot stress this enough, don't assume!!
+
+> IMPORTANT: In anything you do, if context7 is available and would be helpful, use that. 
+
+## Generation
+
+Prefer to use generation tools for general project scaffolding, versus writing the code for them yourself.
+For example, if the task calls for a new Pulumi project, use the Pulumi tools or CLI to generate the scaffolding, and THEN go ahead with any further changes.
+A non-exhaustive list of frameworks/etc. where this applies
+- Pulumi
+- CDK
+- Bun
+- NPM
+- SST
+- Next.js
+
+But you see the common principle here too!

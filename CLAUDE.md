@@ -81,7 +81,19 @@ When modifying this repository:
 
 ### Documentation Guidelines
 When uncertain about implementation details:
-- **Use available tools**: Leverage MCP servers and context7 for accurate documentation lookup
+- **Prioritize context7**: Use context7 whenever available and relevant for documentation lookup
+- **Use available tools**: Leverage MCP servers for accurate documentation lookup
 - **Research first**: Always look up official documentation rather than making assumptions
 - **Web search as fallback**: Use web search when specific tooling documentation isn't available through MCP
 - **Verify accuracy**: Double-check implementation details against official sources
+
+### Project Generation and Scaffolding
+Prefer using generation tools for project scaffolding rather than manual code creation:
+- **Pulumi**: Use Pulumi CLI for new project scaffolding
+- **CDK**: Use CDK CLI for AWS CDK project initialization
+- **Next.js**: Use `create-next-app` for new Next.js projects
+- **Bun**: Use `bun create` for new Bun projects
+- **NPM**: Use `npm init` or package generators for new packages
+- **SST**: Use SST CLI for serverless project scaffolding
+
+**Workflow**: Generate scaffolding first, then customize with specific requirements
