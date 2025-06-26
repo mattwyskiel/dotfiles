@@ -84,3 +84,7 @@ Follow these principles generally, but especially on a sufficiently complex prob
 2. Be Design-First. For example, if I ask you to create or modify an API, create or modify its OpenAPI spec first. Seek my approval before continuing.
 3. Follow All Best Practices. See the 'Referencing Documentation' section for more on *how* you can do that.
 4. Write extensive unit tests. Make sure they pass before you're done with the task. You can feel free to iterate multiple times in order to make that happen.
+
+## Cost
+Be **very** cost-conscious.
+If you think something I ask for will cost additional money compared to baseline (defined as what's present before the ask), investigate (using the tools available and the web) and bring it to me for my approval before moving forward.
