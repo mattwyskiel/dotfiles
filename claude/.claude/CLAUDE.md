@@ -76,3 +76,11 @@ A non-exhaustive list of frameworks/etc. where this applies
 - Next.js
 
 But you see the common principle here too!
+
+## Iteration
+Follow these principles generally, but especially on a sufficiently complex problem (major feature, new service, etc.).
+
+1. Plan the intent based on the problem. Get my approval before executing.
+2. Be Design-First. For example, if I ask you to create or modify an API, create or modify its OpenAPI spec first. Seek my approval before continuing.
+3. Follow All Best Practices. See the 'Referencing Documentation' section for more on *how* you can do that.
+4. Write extensive unit tests. Make sure they pass before you're done with the task. You can feel free to iterate multiple times in order to make that happen.
