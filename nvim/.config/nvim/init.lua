@@ -29,8 +29,8 @@ require('lazy').setup({
 
   require 'mattwyskiel.plugins.markdown',
   require 'mattwyskiel.plugins.copilot', -- GitHub Copilot
-  require 'mattwyskiel.plugins.codecompanion', -- Code Companion for AI assistance
   require 'mattwyskiel.plugins.mcp',
+  require 'mattwyskiel.plugins.claudecode',
 }, {
   ui = require 'mattwyskiel.lazy.ui', -- UI for lazy.nvim
 })

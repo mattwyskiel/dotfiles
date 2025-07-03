@@ -12,6 +12,10 @@ export NVM_DIR="$HOME/.nvm"
 # sst
 export PATH=/Users/matthewwyskiel/.sst/bin:$PATH
 
+# claude
+export CLAUDE_HOME="$HOME/.claude"
+export PATH="$CLAUDE_HOME/local:$PATH"
+
 # Created by `pipx` on 2024-04-25 17:37:44
 export PATH="$PATH:/Users/matthewwyskiel/.local/bin"
 
