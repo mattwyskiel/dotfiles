@@ -21,16 +21,16 @@ else
     echo "GNU Stow is already installed."
 fi
 
-# Check if Alacritty is installed
+
+# Check if Ghostty is installed
 # If not, install it
-if ! [ -d "/Applications/Alacritty.app" ]; then
-    echo "Alacritty not found. Installing..."
-    brew install alacritty
+if ! [ -d "/Applications/Ghostty.app" ]; then
+    echo "Ghostty not found. Installing..."
+    brew install --cask ghostty
 else
-    echo "Alacritty is already installed."
+    echo "Ghostty is already installed."
 
 fi
-
 # Check if Hack Nerd Font is installed
 # If not, install it
 if ! [ -f "$HOME/Library/Fonts/HackNerdFont-Regular.ttf" ]; then
@@ -40,8 +40,8 @@ else
     echo "Hack Nerd Font is already installed."
 fi
 
-echo "Symlinking alacritty config..."
-stow --dir="$HOME/dotfiles" --target="$HOME" alacritty
+echo "Symlinking Ghostty config..."
+stow --dir="$HOME/dotfiles" --target="$HOME" ghostty
 echo "...done."
 
 # Install oh-my-posh
