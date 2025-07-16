@@ -1,6 +1,31 @@
+# font
 font-family = Hack Nerd Font Mono
 font-style = Regular
 font-size = 14
+
+# window
 background-opacity = 0.9
 background-blur = true
 maximize = true
+
+theme = tokyonight_night
+
+# tmux-style keybindings
+# -- new split
+keybind = ctrl+shift+h=new_split:left
+keybind = ctrl+shift+j=new_split:down
+keybind = ctrl+shift+k=new_split:up
+keybind = ctrl+shift+l=new_split:right
+
+# -- go-to split
+keybind = ctrl+super+j=goto_split:down
+keybind = ctrl+super+k=goto_split:up
+keybind = ctrl+super+h=goto_split:left
+keybind = ctrl+super+l=goto_split:right
+
+# -- resize split
+keybind = ctrl+shift+super+h=resize_split:left,10
+keybind = ctrl+shift+super+j=resize_split:down,10
+keybind = ctrl+shift+super+k=resize_split:up,10
+keybind = ctrl+shift+super+l=resize_split:right,10
+keybind = shift+enter=text:\n
