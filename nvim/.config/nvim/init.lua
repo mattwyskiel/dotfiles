@@ -14,6 +14,8 @@ require('lazy').setup({
   require 'mattwyskiel.plugins.telescope', -- Fuzzy finder
   require 'mattwyskiel.plugins.telescope-file-browser', -- File browser for telescope
   require 'mattwyskiel.plugins.autopairs', -- Autopairs for brackets, quotes, etc.
+  require 'mattwyskiel.plugins.image',
+
   -- require 'mattwyskiel.plugins.indent_line', -- Indent line for showing indentation levels
   require 'mattwyskiel.plugins.lazydev', -- LazyDev for lazy loading plugins
   require 'mattwyskiel.plugins.lspconfig', -- LSP configuration
