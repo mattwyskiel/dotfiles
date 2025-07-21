@@ -52,3 +52,8 @@ fi
 
 eval "$(oh-my-posh init zsh --config $(brew --prefix oh-my-posh)/themes/catppuccin_mocha.omp.json)"
 alias claude="/Users/matthewwyskiel/.claude/local/claude"
+
+# opencode
+export PATH=/Users/matthewwyskiel/.opencode/bin:$PATH
+
+export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib:$DYLD_FALLBACK_LIBRARY_PATH"
