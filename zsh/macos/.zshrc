@@ -38,6 +38,8 @@ alias awscheck="$HOME/dotfiles/scripts/aws-sso-check.sh"
 # run 'git pull' on the dotfiles repo
 refresh
 
+export TURBO_UI=true
+
 # bun completions
 [ -s "/Users/matthewwyskiel/.bun/_bun" ] && source "/Users/matthewwyskiel/.bun/_bun"
 
