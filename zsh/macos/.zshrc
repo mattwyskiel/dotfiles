@@ -59,3 +59,5 @@ alias claude="/Users/matthewwyskiel/.claude/local/claude"
 export PATH=/Users/matthewwyskiel/.opencode/bin:$PATH
 
 export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib:$DYLD_FALLBACK_LIBRARY_PATH"
+
+export DOCUMENTS="/Users/matthewwyskiel/Library/CloudStorage/OneDrive-Personal/Documents"
