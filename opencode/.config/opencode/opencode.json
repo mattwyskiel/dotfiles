@@ -1,9 +1,12 @@
 {
     "$schema": "https://opencode.ai/config.json",
     "theme": "system",
-    "model": "openrouter/anthropic/claude-4-sonnet-20250522",
+    "model": "openrouter/x-ai/grok-code-fast-1",
     "autoshare": false,
     "autoupdate": true,
+    "instructions": [
+        "~/.claude/CLAUDE.md"
+    ],
     "mcp": {
         "aws_core": {
             "type": "local",
@@ -99,6 +102,25 @@
         "context7": {
             "type": "remote",
             "url": "https://mcp.context7.com/mcp",
+            "enabled": true
+        },
+        "hostinger": {
+            "type": "local",
+            "command": [
+                "npx",
+                "hostinger-api-mcp"
+            ],
+            "environment": {
+                "DEBUG": "false",
+                "APITOKEN": "{env:HOSTINGER_OPENCODE_API_TOKEN}"
+            }
+        },
+        "hugging_face": {
+            "type": "remote",
+            "url": "https://huggingface.co/mcp",
+            "headers": {
+                "Authorization": "Bearer {env:HUGGING_FACE_API_TOKEN}"
+            },
             "enabled": true
         }
     }
