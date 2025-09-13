@@ -72,7 +72,4 @@ vim.list_extend(ensure_installed, {
 })
 require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
--- Non-Mason LSPs
-require('lspconfig').gh_actions_ls.setup {}
-
 return servers
