@@ -10,7 +10,7 @@ This file provides general guidance to Claude Code (claude.ai/code) when working
 - When creating new sub-codebases within a larger codebase (i.e. monorepo), ensure that the style, tooling, etc. fits in with the rest of the project. Similar boilerplate for similar Things being generated, etc.
 
 ### Documentation
-- Embrace the use of code-docs in whatever language you're working in. Make it so the LSP
+- Embrace the use of code-docs in whatever language you're working in. Make it so the LSP can show all it can about whatever's being referenced.
 - A comprehensive README is essential to a project I can work on in parallel with others, or take a break from and come back to.
   - Include sections for a general description, the tech stack, getting started on your local machine, and any other dependencies.
   - Use your judgment on whether the README length in a given situation could be split into multiple docs in a `docs/` folder. A rule of thumb is if we have more than 200 lines in a section, that could be its own Doc.

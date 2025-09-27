@@ -4,9 +4,6 @@
     "model": "openrouter/x-ai/grok-code-fast-1",
     "autoshare": false,
     "autoupdate": true,
-    "instructions": [
-        "~/.claude/CLAUDE.md"
-    ],
     "mcp": {
         "aws_core": {
             "type": "local",
