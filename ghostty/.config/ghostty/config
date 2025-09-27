@@ -8,7 +8,7 @@ background-opacity = 0.9
 background-blur = true
 maximize = true
 
-theme = tokyonight_night
+theme = TokyoNight Night
 
 # tmux-style keybindings
 # -- new split
