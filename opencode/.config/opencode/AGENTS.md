@@ -31,8 +31,8 @@
 - **Cloud**: AWS with serverless-first approach (Lambda > Fargate > EC2, managed services)
 
 ## Documentation Priority
-2. context7
-3. Web search
+1. context7
+2. Web search
 
 **Never assume - always verify documentation**
 
