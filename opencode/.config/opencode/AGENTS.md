@@ -31,6 +31,7 @@
 - **Cloud**: AWS with serverless-first approach (Lambda > Fargate > EC2, managed services)
 
 ## Documentation Priority
+0. (if available) specialized tools
 1. context7
 2. Web search
 
