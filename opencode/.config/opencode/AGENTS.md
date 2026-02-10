@@ -11,25 +11,6 @@
 - Split long docs (>200 lines/section) into `docs/` folder
 - Required docs: README.md, AGENTS.md, relevant `docs/*.md`
 
-## Tooling
-
-### IDE
-- Neovim (config: ~/.config/nvim/, synced across dev machines via GitHub)
-
-### Languages
-- **TypeScript**: Bun runtime, Hono backends, Next.js frontends
-- **Go**: Performance-critical backends
-- **Python**: uv package manager
-- **Swift**: Apple platforms with SwiftUI + TCA
-- **Kotlin**: Android platforms
-
-**Mobile**: Prefer native platforms over cross-platform (React Native, Flutter)
-
-### Infrastructure
-- **IaC**: Pulumi (preferred), SST 3, SST 2 (phasing out)
-- **CI/CD**: GitHub Actions with published actions
-- **Cloud**: AWS with serverless-first approach (Lambda > Fargate > EC2, managed services)
-
 ## Documentation Priority
 0. (if available) specialized tools
 1. context7
@@ -38,7 +19,7 @@
 **Never assume - always verify documentation**
 
 ## Code Generation
-Use official generators for scaffolding:
+ALWAYS PREFER official generators for scaffolding:
 - Pulumi, CDK, SST, Next.js, Bun, NPM
 - Generate first, then customize
 
