@@ -14,7 +14,7 @@
 ## Documentation Priority
 0. (if available) specialized tools
 1. context7
-2. Web search
+3. Web search
 
 **Never assume - always verify documentation**
 
