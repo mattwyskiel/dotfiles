@@ -12,15 +12,17 @@
 - Required docs: README.md, AGENTS.md, relevant `docs/*.md`
 
 ## Documentation Priority
-0. (if available) specialized tools
-1. context7
-3. Web search
+1. Skills (best practices, etc.)
+2. (if available) specialized tools
+3. context7
+4. Web search
 
 **Never assume - always verify documentation**
 
 ## Code Generation
 ALWAYS PREFER official generators for scaffolding:
 - Pulumi, CDK, SST, Next.js, Bun, NPM
+- e.g. if it has a `bun create` (or similar tool for other platforms), use that
 - Generate first, then customize
 
 ## Shell Usage
@@ -28,7 +30,6 @@ ALWAYS PREFER official generators for scaffolding:
 - If specialized tool fails, stop and report error
 
 ## Development Workflow
-For complex features/services:
 
 1. Plan and get approval
 2. Design-first (e.g., OpenAPI specs for APIs)
