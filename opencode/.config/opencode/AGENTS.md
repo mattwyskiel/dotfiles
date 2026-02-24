@@ -35,6 +35,7 @@ ALWAYS PREFER official generators for scaffolding:
 2. Design-first (e.g., OpenAPI specs for APIs)
 3. Follow best practices (see Documentation Priority)
 4. Write comprehensive tests, iterate until passing
+5. Generously document changes made
 
 ## Cost Awareness
 Investigate and get approval for any cost-increasing changes
