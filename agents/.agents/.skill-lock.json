@@ -8,7 +8,7 @@
       "skillPath": "skills/composition-patterns/SKILL.md",
       "skillFolderHash": "bf90d0a4b83ea054653350f9c67f6de235d3a368",
       "installedAt": "2026-02-10T02:50:54.166Z",
-      "updatedAt": "2026-02-10T02:50:54.166Z"
+      "updatedAt": "2026-02-27T01:24:47.947Z"
     },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",
@@ -17,7 +17,7 @@
       "skillPath": "skills/react-best-practices/SKILL.md",
       "skillFolderHash": "079b06a135401704ea94ab74c7c9d86c92ba259f",
       "installedAt": "2026-02-10T02:50:54.181Z",
-      "updatedAt": "2026-02-10T02:50:54.181Z"
+      "updatedAt": "2026-02-27T01:24:47.961Z"
     },
     "skill-creator": {
       "source": "anthropics/skills",
@@ -27,6 +27,116 @@
       "skillFolderHash": "a01fbe3fa7f17f64173bd4fdcfecea86a3fd664c",
       "installedAt": "2026-02-10T02:58:31.501Z",
       "updatedAt": "2026-02-10T02:58:31.501Z"
+    },
+    "cloudformation-to-pulumi": {
+      "source": "pulumi/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/pulumi/agent-skills.git",
+      "skillPath": "migration/skills/cloudformation-to-pulumi/SKILL.md",
+      "skillFolderHash": "867a91f49249b6ca12d84e9f5ec1c14d00e32bfb",
+      "installedAt": "2026-02-27T01:24:11.577Z",
+      "updatedAt": "2026-02-27T01:24:11.577Z"
+    },
+    "pulumi-best-practices": {
+      "source": "pulumi/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/pulumi/agent-skills.git",
+      "skillPath": "authoring/skills/pulumi-best-practices/SKILL.md",
+      "skillFolderHash": "5feb4e9d4eca80773b8c3e1de694e272d7b306a5",
+      "installedAt": "2026-02-27T01:24:11.593Z",
+      "updatedAt": "2026-02-27T01:24:11.593Z"
+    },
+    "pulumi-cdk-to-pulumi": {
+      "source": "pulumi/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/pulumi/agent-skills.git",
+      "skillPath": "migration/skills/pulumi-cdk-to-pulumi/SKILL.md",
+      "skillFolderHash": "18d3e79b42d8c468021718e847079ff62b6bc995",
+      "installedAt": "2026-02-27T01:24:11.605Z",
+      "updatedAt": "2026-02-27T01:24:11.605Z"
+    },
+    "pulumi-component": {
+      "source": "pulumi/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/pulumi/agent-skills.git",
+      "skillPath": "authoring/skills/pulumi-component/SKILL.md",
+      "skillFolderHash": "9335cd07f96b49d2d1e0d00dadf4cb72177284b1",
+      "installedAt": "2026-02-27T01:24:11.616Z",
+      "updatedAt": "2026-02-27T01:24:11.616Z"
+    },
+    "pulumi-terraform-to-pulumi": {
+      "source": "pulumi/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/pulumi/agent-skills.git",
+      "skillPath": "migration/skills/pulumi-terraform-to-pulumi/SKILL.md",
+      "skillFolderHash": "95517967da3ada4f5ced0a04ff2ecd54c82504a6",
+      "installedAt": "2026-02-27T01:24:11.625Z",
+      "updatedAt": "2026-02-27T01:24:11.625Z"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/vercel-labs/agent-skills.git",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "skillFolderHash": "3116f3e62dbd02b44a598b1aa690d2a8938e8f89",
+      "installedAt": "2026-02-27T01:24:47.974Z",
+      "updatedAt": "2026-02-27T01:24:47.974Z"
+    },
+    "better-auth-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/better-auth/skills.git",
+      "skillPath": "better-auth/best-practices/SKILL.md",
+      "skillFolderHash": "83bdaa60f65da278dc513a64127f4e4db759cd20",
+      "pluginName": "auth-skills",
+      "installedAt": "2026-02-27T01:45:55.348Z",
+      "updatedAt": "2026-02-27T01:45:55.348Z"
+    },
+    "create-auth-skill": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/better-auth/skills.git",
+      "skillPath": "better-auth/create-auth/SKILL.md",
+      "skillFolderHash": "55f9e7461d141807f6d129602068fefe5fb7f324",
+      "pluginName": "auth-skills",
+      "installedAt": "2026-02-27T01:45:55.361Z",
+      "updatedAt": "2026-02-27T01:45:55.361Z"
+    },
+    "better-auth-security-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/better-auth/skills.git",
+      "skillPath": "security/SKILL.md",
+      "skillFolderHash": "10fed458dde372e973d70a31ccf0bc39c46abbe9",
+      "installedAt": "2026-02-27T01:45:55.371Z",
+      "updatedAt": "2026-02-27T01:45:55.371Z"
+    },
+    "email-and-password-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/better-auth/skills.git",
+      "skillPath": "better-auth/emailAndPassword/SKILL.md",
+      "skillFolderHash": "bf724b50e2aabccf2f4293d6479168e55773aa5d",
+      "installedAt": "2026-02-27T01:45:55.472Z",
+      "updatedAt": "2026-02-27T01:45:55.472Z"
+    },
+    "organization-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/better-auth/skills.git",
+      "skillPath": "better-auth/organization/SKILL.md",
+      "skillFolderHash": "768e2ca3ef176e6b6d60f40e539cba655c1615f3",
+      "installedAt": "2026-02-27T01:45:55.487Z",
+      "updatedAt": "2026-02-27T01:45:55.487Z"
+    },
+    "two-factor-authentication-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/better-auth/skills.git",
+      "skillPath": "better-auth/twoFactor/SKILL.md",
+      "skillFolderHash": "dfc8a181d1ce8b50cb7752be7231c43659e282d7",
+      "installedAt": "2026-02-27T01:45:55.502Z",
+      "updatedAt": "2026-02-27T01:45:55.502Z"
     }
   },
   "dismissed": {
@@ -34,6 +144,7 @@
   },
   "lastSelectedAgents": [
     "amp",
+    "cline",
     "codex",
     "cursor",
     "gemini-cli",
