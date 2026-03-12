@@ -1,17 +1,6 @@
 {
     "$schema": "https://opencode.ai/config.json",
-    "model": "github-copilot/gpt-5.4",
-    "agent": {
-        "build": {
-            "model": "github-copilot/gpt-5.3-codex"
-        },
-        "plan": {
-            "model": "github-copilot/gpt-5.4"
-        },
-        "explore": {
-            "model": "github-copilot/claude-haiku-4.5"
-        }
-    },
+    "model": "opencode/kimi-k2.5",
     "autoshare": false,
     "autoupdate": true,
     "mcp": {
