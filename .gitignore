@@ -4,3 +4,6 @@ test.sh
 .luarc.json
 
 spell/
+
+# Proprietary pfw skills (symlinks to external paths)
+agents/.agents/skills/pfw-*/
