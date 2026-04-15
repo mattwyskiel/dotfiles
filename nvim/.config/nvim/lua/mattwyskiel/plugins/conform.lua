@@ -34,8 +34,48 @@ return { -- Autoformat
       -- python = { "isort", "black" },
       --
       -- You can use 'stop_after_first' to run the first available formatter from the list
-      javascript = { 'biome', 'prettierd', 'prettier', stop_after_first = true },
-      typescript = { 'biome', 'prettierd', 'prettier', stop_after_first = true },
+      javascript = function(bufnr)
+        if require('conform').get_formatter_info('biome', bufnr).available then
+          return { 'biome' }
+        else
+          return { 'prettierd', 'prettier', stop_after_first = true }
+        end
+      end,
+      javascriptreact = function(bufnr)
+        if require('conform').get_formatter_info('biome', bufnr).available then
+          return { 'biome' }
+        else
+          return { 'prettierd', 'prettier', stop_after_first = true }
+        end
+      end,
+      typescriptreact = function(bufnr)
+        if require('conform').get_formatter_info('biome', bufnr).available then
+          return { 'biome' }
+        else
+          return { 'prettierd', 'prettier', stop_after_first = true }
+        end
+      end,
+      typescript = function(bufnr)
+        if require('conform').get_formatter_info('biome', bufnr).available then
+          return { 'biome' }
+        else
+          return { 'prettierd', 'prettier', stop_after_first = true }
+        end
+      end,
+      json = function(bufnr)
+        if require('conform').get_formatter_info('biome', bufnr).available then
+          return { 'biome' }
+        else
+          return { 'prettierd', 'prettier', stop_after_first = true }
+        end
+      end,
+      css = function(bufnr)
+        if require('conform').get_formatter_info('biome', bufnr).available then
+          return { 'biome' }
+        else
+          return { 'prettierd', 'prettier', stop_after_first = true }
+        end
+      end,
     },
   },
 }

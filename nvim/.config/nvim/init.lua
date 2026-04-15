@@ -30,7 +30,7 @@ if not vim.g.vscode then
     require 'mattwyskiel.plugins.treesitter', -- Treesitter for syntax highlighting
 
     require 'mattwyskiel.plugins.markdown',
-    require 'mattwyskiel.plugins.copilot', -- GitHub Copilot
+    require 'mattwyskiel.plugins.snacks',
     cond = function()
       return not vim.g.vscode
     end,
