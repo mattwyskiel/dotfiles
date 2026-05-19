@@ -15,18 +15,19 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/vercel-labs/agent-skills.git",
       "skillPath": "skills/react-best-practices/SKILL.md",
-      "skillFolderHash": "a203aee7243640ceb56ce2c6c4ab286573df5e69",
+      "skillFolderHash": "343db72180d05814949fef7d46be96b5c6ee86b3",
       "installedAt": "2026-02-10T02:50:54.181Z",
-      "updatedAt": "2026-04-05T15:47:17.921Z"
+      "updatedAt": "2026-04-21T18:56:58.523Z"
     },
     "skill-creator": {
       "source": "anthropics/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/anthropics/skills.git",
       "skillPath": "skills/skill-creator/SKILL.md",
-      "skillFolderHash": "98a510d1cfef9f82c3b1eec200229ca68725e613",
+      "skillFolderHash": "3cf9a8db32597ba3e24b584a3d696f4e11c7d7b6",
+      "pluginName": "example-skills",
       "installedAt": "2026-02-10T02:58:31.501Z",
-      "updatedAt": "2026-04-05T15:47:19.081Z"
+      "updatedAt": "2026-04-21T19:07:58.607Z"
     },
     "cloudformation-to-pulumi": {
       "source": "pulumi/agent-skills",
@@ -35,7 +36,7 @@
       "skillPath": "migration/skills/cloudformation-to-pulumi/SKILL.md",
       "skillFolderHash": "3cf1bfae4e70935eddb81c95c64f3a1a8ace788a",
       "installedAt": "2026-02-27T01:24:11.577Z",
-      "updatedAt": "2026-04-05T15:47:20.243Z"
+      "updatedAt": "2026-04-21T19:39:32.557Z"
     },
     "pulumi-best-practices": {
       "source": "pulumi/agent-skills",
@@ -44,7 +45,7 @@
       "skillPath": "authoring/skills/pulumi-best-practices/SKILL.md",
       "skillFolderHash": "c92c1c84d760a7ddae31904cd8d2da4b483c28bc",
       "installedAt": "2026-02-27T01:24:11.593Z",
-      "updatedAt": "2026-04-05T15:47:21.212Z"
+      "updatedAt": "2026-04-21T19:39:33.361Z"
     },
     "pulumi-cdk-to-pulumi": {
       "source": "pulumi/agent-skills",
@@ -53,7 +54,7 @@
       "skillPath": "migration/skills/pulumi-cdk-to-pulumi/SKILL.md",
       "skillFolderHash": "409b43641f5ddc6216f4d9e87655e3d7b3861724",
       "installedAt": "2026-02-27T01:24:11.605Z",
-      "updatedAt": "2026-04-05T15:47:22.297Z"
+      "updatedAt": "2026-04-21T19:39:33.592Z"
     },
     "pulumi-component": {
       "source": "pulumi/agent-skills",
@@ -71,7 +72,7 @@
       "skillPath": "migration/skills/pulumi-terraform-to-pulumi/SKILL.md",
       "skillFolderHash": "c05c65905960da1df6b7c89fa73e6c309a63ef51",
       "installedAt": "2026-02-27T01:24:11.625Z",
-      "updatedAt": "2026-04-05T15:47:24.407Z"
+      "updatedAt": "2026-04-21T19:39:33.887Z"
     },
     "web-design-guidelines": {
       "source": "vercel-labs/agent-skills",
@@ -88,8 +89,9 @@
       "sourceUrl": "https://github.com/better-auth/skills.git",
       "skillPath": "better-auth/best-practices/SKILL.md",
       "skillFolderHash": "58f87c7fe7c2c487779728c1e73ea43717612d37",
+      "pluginName": "auth-skills",
       "installedAt": "2026-02-27T01:45:55.348Z",
-      "updatedAt": "2026-04-05T15:47:25.378Z"
+      "updatedAt": "2026-04-21T19:02:49.146Z"
     },
     "create-auth-skill": {
       "source": "better-auth/skills",
@@ -97,8 +99,9 @@
       "sourceUrl": "https://github.com/better-auth/skills.git",
       "skillPath": "better-auth/create-auth/SKILL.md",
       "skillFolderHash": "5192f50c149fc94b6bfb4cf288dfd84f37517e00",
+      "pluginName": "auth-skills",
       "installedAt": "2026-02-27T01:45:55.361Z",
-      "updatedAt": "2026-04-05T15:47:26.112Z"
+      "updatedAt": "2026-04-21T19:02:49.463Z"
     },
     "better-auth-security-best-practices": {
       "source": "better-auth/skills",
@@ -107,7 +110,7 @@
       "skillPath": "security/SKILL.md",
       "skillFolderHash": "845a8a6373a316deb708dcf09a6d1e019ceccb50",
       "installedAt": "2026-02-27T01:45:55.371Z",
-      "updatedAt": "2026-04-05T15:47:26.908Z"
+      "updatedAt": "2026-04-21T19:02:49.795Z"
     },
     "email-and-password-best-practices": {
       "source": "better-auth/skills",
@@ -116,7 +119,7 @@
       "skillPath": "better-auth/emailAndPassword/SKILL.md",
       "skillFolderHash": "9da895cd339e3eda0ba6d1b8d2b54e24799b1992",
       "installedAt": "2026-02-27T01:45:55.472Z",
-      "updatedAt": "2026-04-05T15:47:27.811Z"
+      "updatedAt": "2026-04-21T19:02:50.056Z"
     },
     "organization-best-practices": {
       "source": "better-auth/skills",
@@ -125,7 +128,7 @@
       "skillPath": "better-auth/organization/SKILL.md",
       "skillFolderHash": "461989110d1cd43c4809bea01c9a61b9fd432056",
       "installedAt": "2026-02-27T01:45:55.487Z",
-      "updatedAt": "2026-04-05T15:47:28.790Z"
+      "updatedAt": "2026-04-21T19:02:50.322Z"
     },
     "two-factor-authentication-best-practices": {
       "source": "better-auth/skills",
@@ -134,7 +137,191 @@
       "skillPath": "better-auth/twoFactor/SKILL.md",
       "skillFolderHash": "c3e340469e63705527a6191c6b7ac94ff7448ded",
       "installedAt": "2026-02-27T01:45:55.502Z",
-      "updatedAt": "2026-04-05T15:47:29.681Z"
+      "updatedAt": "2026-04-21T19:02:50.568Z"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/shadcn/ui.git",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "skillFolderHash": "39a241ae2b522ccb686d4d7064ca61e68dbf3794",
+      "installedAt": "2026-04-21T18:57:43.460Z",
+      "updatedAt": "2026-04-21T18:57:43.460Z"
+    },
+    "claude-api": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "skillPath": "skills/claude-api/SKILL.md",
+      "skillFolderHash": "ffbd6daefeffa43f694a4af7772a1f11ff015180",
+      "pluginName": "claude-api",
+      "installedAt": "2026-04-21T19:07:58.302Z",
+      "updatedAt": "2026-04-21T19:07:58.302Z"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "skillFolderHash": "928950704df8a8b885c03de5da626331e6f29cf8",
+      "pluginName": "example-skills",
+      "installedAt": "2026-04-21T19:07:58.864Z",
+      "updatedAt": "2026-04-21T19:07:58.864Z"
+    },
+    "mcp-builder": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "skillPath": "skills/mcp-builder/SKILL.md",
+      "skillFolderHash": "b866bcfb57b780c10b587c7b543e871a91661ce0",
+      "pluginName": "example-skills",
+      "installedAt": "2026-04-21T19:07:59.152Z",
+      "updatedAt": "2026-04-21T19:07:59.152Z"
+    },
+    "webapp-testing": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "skillPath": "skills/webapp-testing/SKILL.md",
+      "skillFolderHash": "5ffb7dc66b9fd4c25c3e400a4c00da99a349b714",
+      "pluginName": "example-skills",
+      "installedAt": "2026-04-21T19:07:59.403Z",
+      "updatedAt": "2026-04-21T19:07:59.403Z"
+    },
+    "package-usage": {
+      "source": "pulumi/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/pulumi/agent-skills.git",
+      "skillPath": "authoring/skills/package-usage/SKILL.md",
+      "skillFolderHash": "ba08d5fe5eebae6dbfb6ae4ef88bb34d03d2d5c0",
+      "installedAt": "2026-04-21T19:39:32.836Z",
+      "updatedAt": "2026-04-21T19:39:32.836Z"
+    },
+    "provider-upgrade": {
+      "source": "pulumi/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/pulumi/agent-skills.git",
+      "skillPath": "authoring/skills/provider-upgrade/SKILL.md",
+      "skillFolderHash": "fb12df029eaebb7f385114542c0846e87d9db631",
+      "installedAt": "2026-04-21T19:39:33.081Z",
+      "updatedAt": "2026-04-21T19:39:33.081Z"
+    },
+    "api-gateway": {
+      "source": "awslabs/agent-plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/awslabs/agent-plugins.git",
+      "skillPath": "plugins/aws-serverless/skills/api-gateway/SKILL.md",
+      "skillFolderHash": "d402d7eb553fa0b40edff7efe4267cb895265279",
+      "installedAt": "2026-04-21T19:41:15.979Z",
+      "updatedAt": "2026-04-21T19:41:15.979Z"
+    },
+    "aws-architecture-diagram": {
+      "source": "awslabs/agent-plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/awslabs/agent-plugins.git",
+      "skillPath": "plugins/deploy-on-aws/skills/aws-architecture-diagram/SKILL.md",
+      "skillFolderHash": "5ab45f09b9933bf892490861f2c11aa0d846d0c9",
+      "installedAt": "2026-04-21T19:41:16.316Z",
+      "updatedAt": "2026-04-21T19:41:16.316Z"
+    },
+    "aws-lambda": {
+      "source": "awslabs/agent-plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/awslabs/agent-plugins.git",
+      "skillPath": "plugins/aws-serverless/skills/aws-lambda/SKILL.md",
+      "skillFolderHash": "6597683f8f4460bc1a71a40b782c15b1bb9d158c",
+      "installedAt": "2026-04-21T19:41:16.645Z",
+      "updatedAt": "2026-04-21T19:41:16.645Z"
+    },
+    "aws-lambda-durable-functions": {
+      "source": "awslabs/agent-plugins",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/awslabs/agent-plugins.git",
+      "skillPath": "plugins/aws-serverless/skills/aws-lambda-durable-functions/SKILL.md",
+      "skillFolderHash": "83ae7175e748b02b0365880e69669456a973674e",
+      "installedAt": "2026-04-21T19:41:16.929Z",
+      "updatedAt": "2026-04-21T19:41:16.929Z"
+    },
+    "brave-search": {
+      "source": "badlogic/pi-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/badlogic/pi-skills.git",
+      "skillPath": "brave-search/SKILL.md",
+      "skillFolderHash": "079a8cb038b9166f6570a1db1f8b576efbb30b24",
+      "installedAt": "2026-04-21T22:03:40.901Z",
+      "updatedAt": "2026-04-21T22:03:40.901Z"
+    },
+    "browser-tools": {
+      "source": "badlogic/pi-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/badlogic/pi-skills.git",
+      "skillPath": "browser-tools/SKILL.md",
+      "skillFolderHash": "d066e177c0ee86d7e0bc13cabdabfd368b983022",
+      "installedAt": "2026-04-21T22:03:41.118Z",
+      "updatedAt": "2026-04-21T22:03:41.118Z"
+    },
+    "turborepo": {
+      "source": "vercel/turborepo",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/vercel/turborepo.git",
+      "skillPath": "skills/turborepo/SKILL.md",
+      "skillFolderHash": "5cffe587c4552af985368ae579060bdb2f9d05f3",
+      "installedAt": "2026-04-25T14:55:28.092Z",
+      "updatedAt": "2026-04-25T14:55:28.092Z"
+    },
+    "design-an-interface": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/mattpocock/skills.git",
+      "skillPath": "design-an-interface/SKILL.md",
+      "skillFolderHash": "59d5eca0fd23930d3d3821aa9da507f1bdb8a348",
+      "installedAt": "2026-04-27T19:14:41.551Z",
+      "updatedAt": "2026-04-27T19:14:41.551Z"
+    },
+    "domain-model": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/mattpocock/skills.git",
+      "skillPath": "domain-model/SKILL.md",
+      "skillFolderHash": "889ba0d2f9ce34a4d853cf1b043e55374d43cf0c",
+      "installedAt": "2026-04-27T19:14:41.775Z",
+      "updatedAt": "2026-04-27T19:14:41.775Z"
+    },
+    "grill-me": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/mattpocock/skills.git",
+      "skillPath": "grill-me/SKILL.md",
+      "skillFolderHash": "2a1ad17028306ebe45f0e49703fa28b9b2e7f499",
+      "installedAt": "2026-04-27T19:14:42.008Z",
+      "updatedAt": "2026-04-27T19:14:42.008Z"
+    },
+    "improve-codebase-architecture": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/mattpocock/skills.git",
+      "skillPath": "improve-codebase-architecture/SKILL.md",
+      "skillFolderHash": "008dfd3cf28adfe7e8e89bdbb8de85a1e70601d7",
+      "installedAt": "2026-04-27T19:14:42.256Z",
+      "updatedAt": "2026-04-27T19:14:42.256Z"
+    },
+    "request-refactor-plan": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/mattpocock/skills.git",
+      "skillPath": "request-refactor-plan/SKILL.md",
+      "skillFolderHash": "b0617c9cf69ac1e73a6b30f78c82ff81372079fd",
+      "installedAt": "2026-04-27T19:14:42.486Z",
+      "updatedAt": "2026-04-27T19:14:42.486Z"
+    },
+    "ubiquitous-language": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/mattpocock/skills.git",
+      "skillPath": "ubiquitous-language/SKILL.md",
+      "skillFolderHash": "483fe10b01bed81b7eba7ee26df3f1bef9540c88",
+      "installedAt": "2026-04-27T19:14:42.734Z",
+      "updatedAt": "2026-04-27T19:14:42.734Z"
     }
   },
   "dismissed": {
@@ -142,12 +329,16 @@
   },
   "lastSelectedAgents": [
     "amp",
+    "antigravity",
     "cline",
     "codex",
     "cursor",
+    "deepagents",
+    "firebender",
     "gemini-cli",
     "github-copilot",
     "kimi-cli",
-    "opencode"
+    "opencode",
+    "warp"
   ]
 }
