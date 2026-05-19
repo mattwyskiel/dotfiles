@@ -26,6 +26,7 @@ local servers = {
       },
     },
   },
+  rust_analyzer = {},
   yamlls = {
     settings = {
       yaml = {
