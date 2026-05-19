@@ -57,6 +57,9 @@ eval "$(oh-my-posh init zsh --config $(brew --prefix oh-my-posh)/themes/catppucc
 # opencode
 export PATH=/Users/matthewwyskiel/.opencode/bin:$PATH
 
+# rust
+. "$HOME/.cargo/env"
+
 export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib:$DYLD_FALLBACK_LIBRARY_PATH"
 
 export DOCUMENTS="/Users/matthewwyskiel/Library/CloudStorage/OneDrive-Personal/Documents"
