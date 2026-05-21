@@ -38,6 +38,10 @@ const env = await client.beta.environments.create({
 });
 ```
 
+### Self-hosted sandboxes
+
+To run tool execution in **your own infrastructure** instead of Anthropic's, set `config: {type: "self_hosted"}` — the agent loop stays on Anthropic's side, but `bash` / file ops / code execute in a container you control via an outbound-polling worker. The `networking` block does not apply (you control egress). Resource mounting (`file`, `github_repository`) and memory stores behave differently — see `shared/managed-agents-self-hosted-sandboxes.md` for the worker, credentials, and cloud-vs-self-hosted comparison.
+
 ### Environment CRUD
 
 | Operation        | Method   | Path                                       | Notes |
@@ -53,7 +57,7 @@ const env = await client.beta.environments.create({
 
 ## Resources
 
-Attach files and GitHub repositories to a session. **Session creation blocks until all resources are mounted** — the container won't go `running` until every file and repo is in place. Max **999 file resources** per session. Multiple GitHub repositories per session are supported.
+Attach files, GitHub repositories, and memory stores to a session. **Session creation blocks until all resources are mounted** — the container won't go `running` until every file and repo is in place. Max **999 file resources** per session. Multiple GitHub repositories per session are supported. For `type: "memory_store"` resources (persistent cross-session memory — max 8 per session), see `shared/managed-agents-memory.md`.
 
 ### File Uploads (input — host → agent)
 
@@ -63,7 +67,6 @@ Upload a file first via the Files API, then reference by `file_id` + `mount_path
 // 1. Upload
 const file = await client.beta.files.upload({
   file: fs.createReadStream("data.csv"),
-  purpose: "agent",
 });
 
 // 2. Attach as a session resource

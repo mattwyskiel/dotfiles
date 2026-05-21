@@ -144,19 +144,18 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/shadcn/ui.git",
       "skillPath": "skills/shadcn/SKILL.md",
-      "skillFolderHash": "39a241ae2b522ccb686d4d7064ca61e68dbf3794",
+      "skillFolderHash": "a8404703769866faf15bee897c9ae6e252ac2d35",
       "installedAt": "2026-04-21T18:57:43.460Z",
-      "updatedAt": "2026-04-21T18:57:43.460Z"
+      "updatedAt": "2026-05-21T18:02:04.622Z"
     },
     "claude-api": {
       "source": "anthropics/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/anthropics/skills.git",
       "skillPath": "skills/claude-api/SKILL.md",
-      "skillFolderHash": "ffbd6daefeffa43f694a4af7772a1f11ff015180",
-      "pluginName": "claude-api",
+      "skillFolderHash": "e0365048d0fb24b0e7e89feccdc2e6afc96ccecb",
       "installedAt": "2026-04-21T19:07:58.302Z",
-      "updatedAt": "2026-04-21T19:07:58.302Z"
+      "updatedAt": "2026-05-21T18:02:06.073Z"
     },
     "frontend-design": {
       "source": "anthropics/skills",
@@ -193,9 +192,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/pulumi/agent-skills.git",
       "skillPath": "authoring/skills/package-usage/SKILL.md",
-      "skillFolderHash": "ba08d5fe5eebae6dbfb6ae4ef88bb34d03d2d5c0",
+      "skillFolderHash": "5974763807e71ab21e5f6c901f9412b6536b4ee9",
       "installedAt": "2026-04-21T19:39:32.836Z",
-      "updatedAt": "2026-04-21T19:39:32.836Z"
+      "updatedAt": "2026-05-21T18:02:06.821Z"
     },
     "provider-upgrade": {
       "source": "pulumi/agent-skills",
@@ -238,9 +237,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/awslabs/agent-plugins.git",
       "skillPath": "plugins/aws-serverless/skills/aws-lambda-durable-functions/SKILL.md",
-      "skillFolderHash": "83ae7175e748b02b0365880e69669456a973674e",
+      "skillFolderHash": "231ad85b82e17f243f48088aa7bec82453b17bbe",
       "installedAt": "2026-04-21T19:41:16.929Z",
-      "updatedAt": "2026-04-21T19:41:16.929Z"
+      "updatedAt": "2026-05-21T18:02:07.799Z"
     },
     "brave-search": {
       "source": "badlogic/pi-skills",
@@ -265,9 +264,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/vercel/turborepo.git",
       "skillPath": "skills/turborepo/SKILL.md",
-      "skillFolderHash": "5cffe587c4552af985368ae579060bdb2f9d05f3",
+      "skillFolderHash": "bb5d30e55debb99693fcac9f7469657b7395a29a",
       "installedAt": "2026-04-25T14:55:28.092Z",
-      "updatedAt": "2026-04-25T14:55:28.092Z"
+      "updatedAt": "2026-05-21T18:02:08.523Z"
     },
     "design-an-interface": {
       "source": "mattpocock/skills",
