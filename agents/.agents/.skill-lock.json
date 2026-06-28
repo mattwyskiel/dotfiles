@@ -79,9 +79,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/anthropics/skills.git",
       "skillPath": "skills/claude-api/SKILL.md",
-      "skillFolderHash": "833ddd2c7e101d76dc6eddd9750330f9c91acdd1",
+      "skillFolderHash": "ae939ad43bd12ff2a717b976e059cb77c9f365fe",
       "installedAt": "2026-04-21T19:07:58.302Z",
-      "updatedAt": "2026-06-13T17:51:10.271Z"
+      "updatedAt": "2026-06-28T20:00:18.368Z"
     },
     "frontend-design": {
       "source": "anthropics/skills",
@@ -171,9 +171,81 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/vercel/turborepo.git",
       "skillPath": "skills/turborepo/SKILL.md",
-      "skillFolderHash": "c53c0e4fabb854feb752ba360fb29314b4e9b3c9",
+      "skillFolderHash": "b94a02ecb6abf044375ddb9d479929cf9d0a4742",
       "installedAt": "2026-04-25T14:55:28.092Z",
-      "updatedAt": "2026-06-14T22:36:21.637Z"
+      "updatedAt": "2026-06-28T20:00:19.234Z"
+    },
+    "pulumi-best-practices": {
+      "source": "pulumi/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/pulumi/agent-skills.git",
+      "skillPath": "pulumi/skills/pulumi-best-practices/SKILL.md",
+      "skillFolderHash": "5cf629b0aef791e35a0b4953095c158ef91b3163",
+      "installedAt": "2026-06-16T14:02:40.470Z",
+      "updatedAt": "2026-06-16T14:02:40.470Z"
+    },
+    "pulumi-component": {
+      "source": "pulumi/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/pulumi/agent-skills.git",
+      "skillPath": "pulumi/skills/pulumi-component/SKILL.md",
+      "skillFolderHash": "5add03e8d43da5faf2ef8d4a25e295229b39ec56",
+      "installedAt": "2026-06-16T14:02:40.472Z",
+      "updatedAt": "2026-06-16T14:02:40.472Z"
+    },
+    "pulumi-overview": {
+      "source": "pulumi/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/pulumi/agent-skills.git",
+      "skillPath": "pulumi/skills/pulumi-overview/SKILL.md",
+      "skillFolderHash": "c417c3887b1a2559926f608bbdb80c2257b98cf4",
+      "installedAt": "2026-06-16T14:02:40.474Z",
+      "updatedAt": "2026-06-16T14:02:40.474Z"
+    },
+    "pulumi-upgrade-provider": {
+      "source": "pulumi/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/pulumi/agent-skills.git",
+      "skillPath": "package-maintenance/skills/pulumi-upgrade-provider/SKILL.md",
+      "skillFolderHash": "c780ff2141f79ab837bed9d1699269256517816f",
+      "installedAt": "2026-06-16T14:02:40.475Z",
+      "updatedAt": "2026-06-16T14:02:40.475Z"
+    },
+    "provider-upgrade": {
+      "source": "pulumi/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/pulumi/agent-skills.git",
+      "skillPath": "pulumi/skills/provider-upgrade/SKILL.md",
+      "skillFolderHash": "fb12df029eaebb7f385114542c0846e87d9db631",
+      "installedAt": "2026-06-16T14:02:40.476Z",
+      "updatedAt": "2026-06-16T14:02:40.476Z"
+    },
+    "upstream-patches": {
+      "source": "pulumi/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/pulumi/agent-skills.git",
+      "skillPath": "package-maintenance/skills/upstream-patches/SKILL.md",
+      "skillFolderHash": "2c78e0272d8b993318a77e3f8f04fb86bd9f8e05",
+      "installedAt": "2026-06-16T14:02:40.476Z",
+      "updatedAt": "2026-06-16T14:02:40.476Z"
+    },
+    "gcloud": {
+      "source": "google/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/google/skills.git",
+      "skillPath": "skills/cloud/gcloud/SKILL.md",
+      "skillFolderHash": "750ec80d0f3286514eaa73929d7c7f6ede50b181",
+      "installedAt": "2026-06-16T14:05:55.572Z",
+      "updatedAt": "2026-06-28T20:00:20.040Z"
+    },
+    "google-cloud-recipe-auth": {
+      "source": "google/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/google/skills.git",
+      "skillPath": "skills/cloud/google-cloud-recipe-auth/SKILL.md",
+      "skillFolderHash": "a42449bc4dc3d411321e9aa63b8ea12c1e5eaa89",
+      "installedAt": "2026-06-16T14:05:55.574Z",
+      "updatedAt": "2026-06-28T20:00:20.763Z"
     }
   },
   "dismissed": {
@@ -182,15 +254,16 @@
   "lastSelectedAgents": [
     "amp",
     "antigravity",
+    "antigravity-cli",
     "cline",
     "codex",
     "cursor",
     "deepagents",
-    "firebender",
     "gemini-cli",
     "github-copilot",
-    "kimi-cli",
+    "kimi-code-cli",
     "opencode",
-    "warp"
+    "warp",
+    "zed"
   ]
 }
