@@ -70,9 +70,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/shadcn/ui.git",
       "skillPath": "skills/shadcn/SKILL.md",
-      "skillFolderHash": "53547268e4c90c0dd7981e098e1ea4a89393575a",
+      "skillFolderHash": "962eb7ef77f17e0bce530153d4fec2136c5fa061",
       "installedAt": "2026-04-21T18:57:43.460Z",
-      "updatedAt": "2026-06-13T17:51:13.552Z"
+      "updatedAt": "2026-06-30T22:17:37.126Z"
     },
     "claude-api": {
       "source": "anthropics/skills",
@@ -171,9 +171,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/vercel/turborepo.git",
       "skillPath": "skills/turborepo/SKILL.md",
-      "skillFolderHash": "b94a02ecb6abf044375ddb9d479929cf9d0a4742",
+      "skillFolderHash": "28383f71bbc80c8ac71dc879a56392335bb6bc94",
       "installedAt": "2026-04-25T14:55:28.092Z",
-      "updatedAt": "2026-06-28T20:00:19.234Z"
+      "updatedAt": "2026-06-30T22:17:38.101Z"
     },
     "pulumi-best-practices": {
       "source": "pulumi/agent-skills",
