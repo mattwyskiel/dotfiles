@@ -19,25 +19,6 @@
       "installedAt": "2026-02-10T02:50:54.181Z",
       "updatedAt": "2026-04-21T18:56:58.523Z"
     },
-    "skill-creator": {
-      "source": "anthropics/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/anthropics/skills.git",
-      "skillPath": "skills/skill-creator/SKILL.md",
-      "skillFolderHash": "3cf9a8db32597ba3e24b584a3d696f4e11c7d7b6",
-      "pluginName": "example-skills",
-      "installedAt": "2026-02-10T02:58:31.501Z",
-      "updatedAt": "2026-04-21T19:07:58.607Z"
-    },
-    "cloudformation-to-pulumi": {
-      "source": "pulumi/agent-skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/pulumi/agent-skills.git",
-      "skillPath": "migration/skills/cloudformation-to-pulumi/SKILL.md",
-      "skillFolderHash": "3cf1bfae4e70935eddb81c95c64f3a1a8ace788a",
-      "installedAt": "2026-02-27T01:24:11.577Z",
-      "updatedAt": "2026-04-21T19:39:32.557Z"
-    },
     "pulumi-cdk-to-pulumi": {
       "source": "pulumi/agent-skills",
       "sourceType": "github",
@@ -56,15 +37,6 @@
       "installedAt": "2026-02-27T01:24:11.625Z",
       "updatedAt": "2026-04-21T19:39:33.887Z"
     },
-    "web-design-guidelines": {
-      "source": "vercel-labs/agent-skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/vercel-labs/agent-skills.git",
-      "skillPath": "skills/web-design-guidelines/SKILL.md",
-      "skillFolderHash": "3116f3e62dbd02b44a598b1aa690d2a8938e8f89",
-      "installedAt": "2026-02-27T01:24:47.974Z",
-      "updatedAt": "2026-02-27T01:24:47.974Z"
-    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",
@@ -73,15 +45,6 @@
       "skillFolderHash": "962eb7ef77f17e0bce530153d4fec2136c5fa061",
       "installedAt": "2026-04-21T18:57:43.460Z",
       "updatedAt": "2026-06-30T22:17:37.126Z"
-    },
-    "claude-api": {
-      "source": "anthropics/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/anthropics/skills.git",
-      "skillPath": "skills/claude-api/SKILL.md",
-      "skillFolderHash": "a4c392286cdd8ad4ac28c13c7d2543895c6b94cf",
-      "installedAt": "2026-04-21T19:07:58.302Z",
-      "updatedAt": "2026-07-08T19:05:12.407Z"
     },
     "frontend-design": {
       "source": "anthropics/skills",
@@ -101,70 +64,6 @@
       "pluginName": "example-skills",
       "installedAt": "2026-04-21T19:07:59.152Z",
       "updatedAt": "2026-04-21T19:07:59.152Z"
-    },
-    "webapp-testing": {
-      "source": "anthropics/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/anthropics/skills.git",
-      "skillPath": "skills/webapp-testing/SKILL.md",
-      "skillFolderHash": "5ffb7dc66b9fd4c25c3e400a4c00da99a349b714",
-      "pluginName": "example-skills",
-      "installedAt": "2026-04-21T19:07:59.403Z",
-      "updatedAt": "2026-04-21T19:07:59.403Z"
-    },
-    "api-gateway": {
-      "source": "awslabs/agent-plugins",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/awslabs/agent-plugins.git",
-      "skillPath": "plugins/aws-serverless/skills/api-gateway/SKILL.md",
-      "skillFolderHash": "d402d7eb553fa0b40edff7efe4267cb895265279",
-      "installedAt": "2026-04-21T19:41:15.979Z",
-      "updatedAt": "2026-04-21T19:41:15.979Z"
-    },
-    "aws-architecture-diagram": {
-      "source": "awslabs/agent-plugins",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/awslabs/agent-plugins.git",
-      "skillPath": "plugins/deploy-on-aws/skills/aws-architecture-diagram/SKILL.md",
-      "skillFolderHash": "5ab45f09b9933bf892490861f2c11aa0d846d0c9",
-      "installedAt": "2026-04-21T19:41:16.316Z",
-      "updatedAt": "2026-04-21T19:41:16.316Z"
-    },
-    "aws-lambda": {
-      "source": "awslabs/agent-plugins",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/awslabs/agent-plugins.git",
-      "skillPath": "plugins/aws-serverless/skills/aws-lambda/SKILL.md",
-      "skillFolderHash": "3114578827b1cf083c66e67014709af901505ab4",
-      "installedAt": "2026-04-21T19:41:16.645Z",
-      "updatedAt": "2026-06-13T17:51:14.815Z"
-    },
-    "aws-lambda-durable-functions": {
-      "source": "awslabs/agent-plugins",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/awslabs/agent-plugins.git",
-      "skillPath": "plugins/aws-serverless/skills/aws-lambda-durable-functions/SKILL.md",
-      "skillFolderHash": "231ad85b82e17f243f48088aa7bec82453b17bbe",
-      "installedAt": "2026-04-21T19:41:16.929Z",
-      "updatedAt": "2026-05-21T18:02:07.799Z"
-    },
-    "brave-search": {
-      "source": "badlogic/pi-skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/badlogic/pi-skills.git",
-      "skillPath": "brave-search/SKILL.md",
-      "skillFolderHash": "079a8cb038b9166f6570a1db1f8b576efbb30b24",
-      "installedAt": "2026-04-21T22:03:40.901Z",
-      "updatedAt": "2026-04-21T22:03:40.901Z"
-    },
-    "browser-tools": {
-      "source": "badlogic/pi-skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/badlogic/pi-skills.git",
-      "skillPath": "browser-tools/SKILL.md",
-      "skillFolderHash": "d066e177c0ee86d7e0bc13cabdabfd368b983022",
-      "installedAt": "2026-04-21T22:03:41.118Z",
-      "updatedAt": "2026-04-21T22:03:41.118Z"
     },
     "turborepo": {
       "source": "vercel/turborepo",
