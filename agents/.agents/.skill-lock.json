@@ -90,7 +90,7 @@
       "skillPath": "pulumi/skills/pulumi-component/SKILL.md",
       "skillFolderHash": "5add03e8d43da5faf2ef8d4a25e295229b39ec56",
       "installedAt": "2026-06-16T14:02:40.472Z",
-      "updatedAt": "2026-06-16T14:02:40.472Z"
+      "updatedAt": "2026-07-10T16:42:38.604Z"
     },
     "pulumi-overview": {
       "source": "pulumi/agent-skills",
@@ -145,6 +145,24 @@
       "skillFolderHash": "a42449bc4dc3d411321e9aa63b8ea12c1e5eaa89",
       "installedAt": "2026-06-16T14:05:55.574Z",
       "updatedAt": "2026-06-28T20:00:20.763Z"
+    },
+    "vercel-react-view-transitions": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/vercel-labs/agent-skills.git",
+      "skillPath": "skills/react-view-transitions/SKILL.md",
+      "skillFolderHash": "4d46c637057aae90b9ec5280190c25dc0d90ec28",
+      "installedAt": "2026-07-10T16:27:32.973Z",
+      "updatedAt": "2026-07-10T16:27:32.973Z"
+    },
+    "pulumi-debug-failed-operation": {
+      "source": "pulumi/agent-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/pulumi/agent-skills.git",
+      "skillPath": "pulumi/skills/pulumi-debug-failed-operation/SKILL.md",
+      "skillFolderHash": "8b0d45ebc00b3b301eaa2d18f2fd8c14d90de007",
+      "installedAt": "2026-07-10T16:42:38.595Z",
+      "updatedAt": "2026-07-10T16:42:38.595Z"
     }
   },
   "dismissed": {
