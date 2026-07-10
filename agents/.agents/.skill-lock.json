@@ -163,6 +163,15 @@
       "skillFolderHash": "8b0d45ebc00b3b301eaa2d18f2fd8c14d90de007",
       "installedAt": "2026-07-10T16:42:38.595Z",
       "updatedAt": "2026-07-10T16:42:38.595Z"
+    },
+    "aws-iam": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/aws/agent-toolkit-for-aws.git",
+      "skillPath": "skills/core-skills/aws-iam/SKILL.md",
+      "skillFolderHash": "5da0a0c41f57fbf7470deb7970a5f403ab40997d",
+      "installedAt": "2026-07-10T16:51:32.137Z",
+      "updatedAt": "2026-07-10T16:51:32.137Z"
     }
   },
   "dismissed": {
