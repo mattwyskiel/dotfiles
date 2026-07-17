@@ -60,6 +60,7 @@ local servers = {
 
   -- Autotools (Makefile)
   autotools_ls = {},
+  clangd = {},
 }
 
 -- To check the current status of installed tools and/or manually install
