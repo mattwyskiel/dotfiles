@@ -7,3 +7,5 @@ spell/
 
 # Proprietary pfw skills (symlinks to external paths)
 agents/.agents/skills/pfw-*/
+
+node_modules

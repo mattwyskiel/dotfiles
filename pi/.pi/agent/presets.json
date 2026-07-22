@@ -1,0 +1,17 @@
+{
+    "codex-sub": {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinkingLevel": "high"
+    },
+    "xai": {
+        "provider": "xai",
+        "model": "grok-4.5",
+        "thinkingLevel": "high"
+    },
+    "opencode-go": {
+        "provider": "opencode-go",
+        "model": "kimi-k3",
+        "thinkingLevel": "high"
+    }
+}
