@@ -19,10 +19,13 @@ repo/
 When Pi starts in `repo/`:
 
 1. Pi's native loader includes `repo/AGENTS.md`.
-2. The first built-in path operation under `packages/` is paused before filesystem access and receives `packages/AGENTS.md`.
-3. The first operation under `packages/web/` also receives `packages/web/AGENTS.md`.
-4. The model retries the paused operation after seeing the instructions.
-5. Nested instructions remain active for later turns, but their explicit scope prevents them from applying to unrelated directories.
+2. The first built-in path operation under `packages/` is paused before filesystem access and loads `packages/AGENTS.md` into model context.
+3. The TUI shows a compact informational notification naming the loaded file instead of rendering its full contents as an error.
+4. The first operation under `packages/web/` similarly loads `packages/web/AGENTS.md`.
+5. The model retries the paused operation after seeing the instructions.
+6. Nested instructions remain active for later turns, but their explicit scope prevents them from applying to unrelated directories.
+
+Pi represents every blocked tool call as an error internally, so the paused tool row still has a short one-line retry marker. The complete instruction payload is delivered as a hidden custom message; it is not shown in the transcript or duplicated in the error-styled row.
 
 Applicable files are ordered from the broadest scope to the most specific scope. More deeply nested instructions are considered more specific when scoped instructions conflict.
 
@@ -73,6 +76,7 @@ Use the diagnostic command to list nested instruction files for a path:
 - TypeScript loaded directly by Pi through jiti
 - Node.js filesystem, path, and crypto APIs
 - Pi extension lifecycle hooks (`before_agent_start`, `tool_call`, and `turn_end`)
+- Pi custom messages and informational UI notifications
 - Bun's built-in test runner for unit tests
 
 ## Dependencies
@@ -89,7 +93,7 @@ No separate package installation is required.
 Run unit tests from `~/.pi`:
 
 ```bash
-bun test agent/extensions/directory-scoped-agents/scoping.test.ts
+bun test ./agent/extensions/directory-scoped-agents/scoping.test.ts
 ```
 
 Smoke-test extension loading without starting a model request:

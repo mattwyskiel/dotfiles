@@ -122,18 +122,45 @@ Prefer Pi's built-in path tools for filesystem access so this check can run. Bas
 		);
 
 		if (missing.length > 0) {
-			for (const instruction of missing) {
+			const newlyPending = missing.filter((instruction) =>
+				!isCurrent(pendingByScope.get(instruction.scope), instruction),
+			);
+			for (const instruction of newlyPending) {
 				pendingByScope.set(instruction.scope, instruction);
 			}
 
 			const absoluteTarget = resolveTargetPath(root, target.path);
+			if (newlyPending.length > 0) {
+				const instructionPaths = newlyPending.map(
+					(instruction) => relative(root, instruction.path) || basename(instruction.path),
+				);
+				const contextMessage = [
+					"A filesystem operation was paused before access so directory-scoped project instructions could be loaded.",
+					formatScopedInstructions(root, absoluteTarget, newlyPending),
+					`Apply these instructions and retry the same ${event.toolName} operation.`,
+				].join("\n\n");
+
+				// Keep the full instruction payload in model context without rendering it as
+				// a failed tool result. Pi notifications provide a compact, tooltip-like UI.
+				pi.sendMessage(
+					{
+						customType: "directory-scoped-instructions",
+						content: contextMessage,
+						display: false,
+						details: { target: relative(root, absoluteTarget), paths: instructionPaths },
+					},
+					{ deliverAs: "steer" },
+				);
+				if (ctx.hasUI) {
+					ctx.ui.notify(`Scoped instructions: ${instructionPaths.join(", ")}`, "info");
+				}
+			}
+
+			// Blocking is still required to guarantee the path is not accessed before
+			// the model sees the instructions, but keep Pi's error-styled row to one line.
 			return {
 				block: true,
-				reason: [
-					"This operation was paused before filesystem access so nested project instructions could be loaded.",
-					formatScopedInstructions(root, absoluteTarget, missing),
-					`Apply these instructions and retry the same ${event.toolName} operation.`,
-				].join("\n\n"),
+				reason: `Scoped instructions loaded; retry the ${event.toolName} operation.`,
 			};
 		}
 
