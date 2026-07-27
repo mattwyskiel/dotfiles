@@ -6,3 +6,4 @@ alias vopen="$HOME/dotfiles/scripts/vopen.sh"
 
 eval "$(oh-my-posh init zsh --config 'https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/catppuccin_mocha.omp.json')"
 
+export EDITOR="nvim"
