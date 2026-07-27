@@ -12,21 +12,22 @@ const execFile = promisify(execFileCallback);
 type ExecResult = { stdout: string; stderr: string };
 
 type CmuxTree = {
-	caller?: { workspace_ref?: string; pane_ref?: string };
+	caller?: { workspace_ref?: string };
 	windows?: Array<{
-		workspaces?: Array<{
-			ref: string;
-			panes?: Array<{
-				ref: string;
-				focused?: boolean;
-				surfaces?: Array<{ type?: string; url?: string | null }>;
-			}>;
-		}>;
+		workspaces?: Array<{ ref: string }>;
 	}>;
 };
 
+type CmuxSurface = {
+	type: "terminal" | "browser";
+	name?: string;
+	command?: string;
+	url?: string;
+	focus?: boolean;
+};
+
 type CmuxLayout =
-	| { pane: { surfaces: Array<{ type: "terminal" | "browser"; command?: string; url?: string }> } }
+	| { pane: { surfaces: CmuxSurface[] } }
 	| { direction: "horizontal" | "vertical"; split: number; children: [CmuxLayout, CmuxLayout] };
 
 type CmuxWorkspaceGroupList = {
@@ -39,7 +40,6 @@ type CmuxWorkspaceGroupList = {
 type CurrentCmuxWorkspace = {
 	ref?: string;
 	groupRef?: string;
-	panes: Array<{ focused: boolean; surfaces: Array<{ type?: string; url?: string | null }> }>;
 };
 
 type WorktreeMetadata = {
@@ -48,6 +48,17 @@ type WorktreeMetadata = {
 	branch: string;
 	baseRef: string;
 	task?: string;
+	title?: string;
+};
+
+type TaskIdentity = {
+	slug: string;
+	title: string;
+};
+
+type ConversationContext = {
+	transcript: string;
+	inferredTask?: string;
 };
 
 /**
@@ -59,6 +70,7 @@ type WorktreeLaunchConfig = {
 	version: 1;
 	sessionName: string;
 	prompt: string;
+	sourceSession?: string;
 	metadata: WorktreeMetadata;
 };
 
@@ -93,7 +105,7 @@ function slugify(value: string, maxLength = 32): string {
 
 function summarizeTaskSlugFallback(task: string): string {
 	const stopWords = new Set([
-		"a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in", "into", "is", "it", "make", "of", "on", "or", "the", "this", "to", "up", "use", "with",
+		"a", "an", "and", "are", "as", "at", "be", "by", "can", "could", "for", "from", "i", "in", "into", "is", "it", "make", "of", "on", "or", "please", "the", "this", "to", "up", "use", "want", "with", "would", "you",
 	]);
 	const words = task
 		.toLowerCase()
@@ -104,12 +116,63 @@ function summarizeTaskSlugFallback(task: string): string {
 	return slugify(words.slice(0, 4).join("-"));
 }
 
-async function summarizeTaskSlug(task: string, ctx: ExtensionCommandContext): Promise<string> {
-	if (!ctx.model) return summarizeTaskSlugFallback(task);
+const HUMAN_TITLE_WORDS: Record<string, string> = {
+	api: "API",
+	aws: "AWS",
+	bash: "Bash",
+	bun: "Bun",
+	cli: "CLI",
+	css: "CSS",
+	html: "HTML",
+	javascript: "JavaScript",
+	json: "JSON",
+	pi: "Pi",
+	sdk: "SDK",
+	typescript: "TypeScript",
+	ui: "UI",
+	url: "URL",
+};
+
+function humanTitleFallback(task: string): string {
+	const words = task
+		.replace(/['"]/g, "")
+		.split(/[^A-Za-z0-9]+/)
+		.filter(Boolean);
+	const leadingFillers = new Set(["can", "could", "i", "please", "want", "would", "you"]);
+	while (words.length > 1 && leadingFillers.has(words[0].toLowerCase())) words.shift();
+
+	const minorWords = new Set(["a", "an", "and", "as", "at", "by", "for", "from", "in", "of", "on", "or", "the", "to", "with"]);
+	const title = words.slice(0, 8).map((word, index) => {
+		const lower = word.toLowerCase();
+		if (HUMAN_TITLE_WORDS[lower]) return HUMAN_TITLE_WORDS[lower];
+		if (index > 0 && minorWords.has(lower)) return lower;
+		return `${word[0].toUpperCase()}${word.slice(1).toLowerCase()}`;
+	});
+	return title.join(" ").slice(0, 72).trim() || "Pi Worktree Task";
+}
+
+function sanitizeHumanTitle(value: unknown, fallbackTask: string): string {
+	if (typeof value !== "string") return humanTitleFallback(fallbackTask);
+	const title = value.replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").replace(/^['"]|['"]$/g, "").trim();
+	return title.slice(0, 72).trim() || humanTitleFallback(fallbackTask);
+}
+
+/**
+ * Infer both machine- and human-readable task names from the available request
+ * context. One model call keeps the branch, workspace, and session names aligned.
+ */
+async function summarizeTaskIdentity(
+	context: string,
+	fallbackTask: string,
+	ctx: ExtensionCommandContext,
+): Promise<TaskIdentity> {
+	const fallbackTitle = humanTitleFallback(fallbackTask);
+	const fallback = { slug: summarizeTaskSlugFallback(fallbackTask), title: fallbackTitle };
+	if (!ctx.model) return fallback;
 
 	try {
 		const auth = await ctx.modelRegistry.getApiKeyAndHeaders(ctx.model);
-		if (!auth.ok || !auth.apiKey) return summarizeTaskSlugFallback(task);
+		if (!auth.ok || !auth.apiKey) return fallback;
 
 		const response = await complete(
 			ctx.model,
@@ -117,11 +180,13 @@ async function summarizeTaskSlug(task: string, ctx: ExtensionCommandContext): Pr
 				messages: [{
 					role: "user" as const,
 					content: [{ type: "text" as const, text: [
-						"Create a short git branch/worktree slug summarizing this task.",
-						"Rules: 2-4 words, lowercase kebab-case, <= 32 chars, no punctuation except hyphens, no quotes, do not copy the prompt verbatim.",
-						"Return only the slug.",
+						"Infer the single coding task that should continue in a new git worktree from the context below.",
+						"Return JSON only: {\"slug\":\"...\",\"title\":\"...\"}",
+						"slug rules: 2-4 descriptive words, lowercase kebab-case, <= 32 chars.",
+						"title rules: concise Human Title Case, typically 3-7 words, <= 72 chars; preserve names such as Bash, Bun, TypeScript, and API.",
+						"Prioritize the latest user request and any explicit /wt task. Do not describe the act of creating a worktree.",
 						"",
-						`Task: ${task}`,
+						context,
 					].join("\n") }],
 					timestamp: Date.now(),
 				}],
@@ -133,10 +198,68 @@ async function summarizeTaskSlug(task: string, ctx: ExtensionCommandContext): Pr
 			.filter((block) => block.type === "text" && typeof block.text === "string")
 			.map((block) => block.text)
 			.join(" ");
-		return slugify(text) || summarizeTaskSlugFallback(task);
+		const json = text.match(/\{[\s\S]*\}/)?.[0];
+		if (!json) return fallback;
+		const parsed = JSON.parse(json) as { slug?: unknown; title?: unknown };
+		const title = sanitizeHumanTitle(parsed.title, fallbackTask);
+		const slugSource = typeof parsed.slug === "string" && parsed.slug.trim() ? parsed.slug : title;
+		return { slug: slugify(slugSource), title };
 	} catch {
-		return summarizeTaskSlugFallback(task);
+		return fallback;
 	}
+}
+
+function contentText(content: unknown): string {
+	if (typeof content === "string") return content.trim();
+	if (!Array.isArray(content)) return "";
+	return content
+		.flatMap((block) => {
+			if (!block || typeof block !== "object") return [];
+			const value = block as { type?: string; text?: unknown };
+			if (value.type === "text" && typeof value.text === "string") return [value.text];
+			if (value.type === "image") return ["[image]"];
+			return [];
+		})
+		.join("\n")
+		.trim();
+}
+
+/**
+ * Serialize conversational messages for task naming and ephemeral-session
+ * handoff. Tool output and private thinking are intentionally omitted; persisted
+ * sessions are forked so the launched Pi still receives the complete context.
+ */
+function conversationContext(ctx: ExtensionCommandContext): ConversationContext {
+	const messages = ctx.sessionManager.buildSessionContext().messages as Array<{
+		role: string;
+		content?: unknown;
+		summary?: unknown;
+	}>;
+	const parts: string[] = [];
+	const userMessages: string[] = [];
+
+	for (const message of messages) {
+		if (message.role === "user" || message.role === "assistant" || message.role === "custom") {
+			const text = contentText(message.content);
+			if (!text) continue;
+			parts.push(`${message.role.toUpperCase()}: ${text}`);
+			if (message.role === "user") userMessages.push(text);
+		} else if ((message.role === "branchSummary" || message.role === "compactionSummary") && typeof message.summary === "string") {
+			parts.push(`CONTEXT SUMMARY: ${message.summary}`);
+		}
+	}
+
+	const fullTranscript = parts.join("\n\n");
+	const maxCharacters = 30_000;
+	const transcript = fullTranscript.length > maxCharacters
+		? `[Earlier conversation omitted for task naming]\n${fullTranscript.slice(-maxCharacters)}`
+		: fullTranscript;
+	const inferredTask = userMessages
+		.slice()
+		.reverse()
+		.find((message) => message.length >= 24 && message.trim().split(/\s+/).length >= 4)
+		?? userMessages.at(-1);
+	return { transcript, inferredTask };
 }
 
 async function uniqueWorktreePath(repoRoot: string, slug: string): Promise<string> {
@@ -170,20 +293,40 @@ async function uniqueBranchName(repoRoot: string, slug: string): Promise<string>
 
 function parseArgs(args: string): { base?: string; task: string } {
 	const trimmed = args.trim();
-	const baseMatch = trimmed.match(/^--base\s+(\S+)\s+(.+)$/s);
+	const baseMatch = trimmed.match(/^--base\s+(\S+)(?:\s+(.+))?$/s);
 	if (baseMatch) {
-		return { base: baseMatch[1], task: baseMatch[2].trim().replace(/^['"]|['"]$/g, "") };
+		return { base: baseMatch[1], task: (baseMatch[2] ?? "").trim().replace(/^['"]|['"]$/g, "") };
 	}
 	return { task: trimmed.replace(/^['"]|['"]$/g, "") };
 }
 
-async function createLaunchConfig(metadata: WorktreeMetadata): Promise<string> {
+function kickoffPrompt(task: string, conversation: ConversationContext, sourceSession?: string): string {
+	const lines = [
+		"Continue this coding task in the new git worktree.",
+		sourceSession
+			? "The complete preceding Pi conversation has been inherited from the source session. Treat it as authoritative context for the task, requirements, decisions, and progress."
+			: "Use the preceding conversation included below as authoritative context for the task, requirements, decisions, and progress.",
+		`Task to continue: ${task}`,
+		"Inspect the worktree state, then continue the requested implementation without asking the user to repeat context.",
+	];
+
+	if (!sourceSession && conversation.transcript) {
+		lines.push("", "Preceding conversation:", conversation.transcript);
+	}
+	return lines.join("\n");
+}
+
+async function createLaunchConfig(
+	metadata: WorktreeMetadata,
+	prompt: string,
+	sourceSession?: string,
+): Promise<string> {
 	const configPath = join(tmpdir(), `pi-worktree-${process.pid}-${Date.now()}.json`);
-	const task = metadata.task ?? metadata.branch;
 	const config: WorktreeLaunchConfig = {
 		version: 1,
-		sessionName: task,
-		prompt: task,
+		sessionName: metadata.title ?? metadata.task ?? metadata.branch,
+		prompt,
+		sourceSession,
 		metadata,
 	};
 
@@ -204,6 +347,8 @@ function parseLaunchConfig(value: unknown): WorktreeLaunchConfig {
 		if (typeof metadata[key] !== "string" || !metadata[key]) throw new Error(`metadata.${key} must be a non-empty string`);
 	}
 	if (metadata.task !== undefined && typeof metadata.task !== "string") throw new Error("metadata.task must be a string");
+	if (metadata.title !== undefined && typeof metadata.title !== "string") throw new Error("metadata.title must be a string");
+	if (config.sourceSession !== undefined && typeof config.sourceSession !== "string") throw new Error("sourceSession must be a string");
 
 	return config as WorktreeLaunchConfig;
 }
@@ -213,13 +358,10 @@ async function loadLaunchConfig(configPath: string): Promise<WorktreeLaunchConfi
 	return parseLaunchConfig(JSON.parse(contents) as unknown);
 }
 
-function piCommand(metadata: WorktreeMetadata, configPath: string): string {
+function piCommand(metadata: WorktreeMetadata, configPath: string, sourceSession?: string): string {
 	const configArgument = `@${configPath}`;
-	return `cd ${shellQuote(metadata.worktreePath)} && PI_WORKTREE_CONFIG=${shellQuote(configPath)} pi ${shellQuote(configArgument)}`;
-}
-
-function shellCommand(worktreePath: string): string {
-	return `cd ${shellQuote(worktreePath)}`;
+	const forkArgument = sourceSession ? ` --fork ${shellQuote(sourceSession)}` : "";
+	return `cd ${shellQuote(metadata.worktreePath)} && PI_WORKTREE_CONFIG=${shellQuote(configPath)} pi${forkArgument} ${shellQuote(configArgument)}`;
 }
 
 async function currentCmuxWorkspace(): Promise<CurrentCmuxWorkspace> {
@@ -230,67 +372,57 @@ async function currentCmuxWorkspace(): Promise<CurrentCmuxWorkspace> {
 		?.flatMap((window) => window.workspaces ?? [])
 		.find((candidate) => candidate.ref === callerWorkspace)
 		?? tree.windows?.[0]?.workspaces?.[0];
-	const panes = workspace?.panes ?? [];
-
+	const workspaceRef = callerWorkspace ?? workspace?.ref;
 	let groupRef: string | undefined;
-	if (callerWorkspace) {
+	if (workspaceRef) {
 		const { stdout: groupsStdout } = await run("cmux", ["workspace-group", "list", "--json"]);
 		const groupList = JSON.parse(groupsStdout) as CmuxWorkspaceGroupList;
-		groupRef = groupList.groups?.find((group) => group.member_workspace_refs?.includes(callerWorkspace))?.ref;
+		groupRef = groupList.groups?.find((group) => group.member_workspace_refs?.includes(workspaceRef))?.ref;
 	}
 
+	return { ref: workspaceRef, groupRef };
+}
+
+/**
+ * Build the fixed worktree workspace: equal-width editor/shell and Pi columns,
+ * with the editor occupying 70% of the left column.
+ */
+function buildLayout(metadata: WorktreeMetadata, configPath: string, sourceSession?: string): CmuxLayout {
 	return {
-		ref: callerWorkspace,
-		groupRef,
-		panes: panes.length > 0
-			? panes.map((pane) => ({ focused: pane.focused === true, surfaces: pane.surfaces ?? [] }))
-			: [{ focused: true, surfaces: [] }],
-	};
-}
-
-function buildLayout(
-	panes: Array<{ focused: boolean; surfaces: Array<{ type?: string; url?: string | null }> }>,
-	metadata: WorktreeMetadata,
-	configPath: string,
-): CmuxLayout {
-	const focusedPaneIndex = Math.max(0, panes.findIndex((pane) => pane.focused));
-	const leaves = panes.map((pane, paneIndex): CmuxLayout => {
-		const sourceSurfaces = pane.surfaces.length > 0 ? pane.surfaces : [{ type: "terminal" }];
-		return {
-			pane: {
-				surfaces: sourceSurfaces.map((surface, surfaceIndex) => {
-					if (surface.type === "browser") return { type: "browser", url: surface.url ?? "about:blank" };
-					return {
-						type: "terminal",
-						command: paneIndex === focusedPaneIndex && surfaceIndex === 0 ? piCommand(metadata, configPath) : shellCommand(metadata.worktreePath),
-					};
-				}),
+		direction: "horizontal",
+		split: 0.5,
+		children: [
+			{
+				direction: "vertical",
+				split: 0.7,
+				children: [
+					{ pane: { surfaces: [{ type: "terminal", name: "Editor", command: "nvim ." }] } },
+					{ pane: { surfaces: [{ type: "terminal", name: "Terminal" }] } },
+				],
 			},
-		};
-	});
-
-	const combine = (items: CmuxLayout[], depth = 0): CmuxLayout => {
-		if (items.length === 1) return items[0];
-		const midpoint = Math.ceil(items.length / 2);
-		return {
-			direction: depth % 2 === 0 ? "horizontal" : "vertical",
-			split: 0.5,
-			children: [combine(items.slice(0, midpoint), depth + 1), combine(items.slice(midpoint), depth + 1)],
-		};
+			{
+				pane: {
+					surfaces: [{
+						type: "terminal",
+						name: "Pi",
+						command: piCommand(metadata, configPath, sourceSession),
+						focus: true,
+					}],
+				},
+			},
+		],
 	};
-
-	return combine(leaves);
 }
 
-async function openCmuxWorkspace(metadata: WorktreeMetadata): Promise<string> {
-	const configPath = await createLaunchConfig(metadata);
+async function openCmuxWorkspace(metadata: WorktreeMetadata, prompt: string, sourceSession?: string): Promise<string> {
+	const configPath = await createLaunchConfig(metadata, prompt, sourceSession);
 	try {
 		const currentWorkspace = await currentCmuxWorkspace();
-		const layout = buildLayout(currentWorkspace.panes, metadata, configPath);
+		const layout = buildLayout(metadata, configPath, sourceSession);
 		const args = [
 			"new-workspace",
 			"--name",
-			metadata.branch,
+			metadata.title ?? metadata.task ?? metadata.branch,
 			"--cwd",
 			metadata.worktreePath,
 			"--layout",
@@ -455,9 +587,11 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 	});
 
 	async function handler(args: string, ctx: ExtensionCommandContext) {
-		const { base, task } = parseArgs(args);
-		if (!task) {
-			ctx.ui.notify("Usage: /wt [--base <ref>] <task>", "error");
+		const { base, task: explicitTask } = parseArgs(args);
+		const conversation = conversationContext(ctx);
+		const taskSeed = explicitTask || conversation.inferredTask;
+		if (!taskSeed) {
+			ctx.ui.notify("Usage: /wt [--base <ref>] [task] (task may be inferred from the preceding conversation)", "error");
 			return;
 		}
 
@@ -465,15 +599,29 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 			const repoRoot = await git(["rev-parse", "--show-toplevel"], ctx.cwd);
 			const currentBranch = await git(["branch", "--show-current"], repoRoot);
 			const baseRef = (base ?? currentBranch) || "HEAD";
-			const slug = await summarizeTaskSlug(task, ctx);
-			const worktreePath = await uniqueWorktreePath(repoRoot, slug);
-			const branch = await uniqueBranchName(repoRoot, slug);
-			const metadata: WorktreeMetadata = { repoRoot, worktreePath, branch, baseRef, task };
+			const identityContext = [
+				conversation.transcript && `Preceding conversation:\n${conversation.transcript}`,
+				explicitTask && `Explicit /wt task:\n${explicitTask}`,
+			].filter(Boolean).join("\n\n") || taskSeed;
+			const identity = await summarizeTaskIdentity(identityContext, taskSeed, ctx);
+			const task = explicitTask || identity.title;
+			const worktreePath = await uniqueWorktreePath(repoRoot, identity.slug);
+			const branch = await uniqueBranchName(repoRoot, identity.slug);
+			const metadata: WorktreeMetadata = {
+				repoRoot,
+				worktreePath,
+				branch,
+				baseRef,
+				task,
+				title: identity.title,
+			};
+			const sourceSession = ctx.sessionManager.getSessionFile();
+			const prompt = kickoffPrompt(task, conversation, sourceSession);
 
-			ctx.ui.notify(`Creating worktree ${branch} from ${baseRef}...`, "info");
+			ctx.ui.notify(`Creating ${identity.title} (${branch}) from ${baseRef}...`, "info");
 			await git(["worktree", "add", "-b", branch, worktreePath, baseRef], repoRoot);
 
-			const workspace = await openCmuxWorkspace(metadata);
+			const workspace = await openCmuxWorkspace(metadata, prompt, sourceSession);
 			ctx.ui.notify(`Opened ${workspace}: ${worktreePath}`, "info");
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
@@ -553,7 +701,7 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 	}
 
 	pi.registerCommand("wt", {
-		description: "Create a git worktree and open a branch-named cmux workspace beside the current grouped workspace",
+		description: "Continue a task in a conversation-aware git worktree and three-pane cmux workspace",
 		handler,
 	});
 
