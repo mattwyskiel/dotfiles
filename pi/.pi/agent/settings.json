@@ -1,10 +1,9 @@
 {
-    "lastChangelogVersion": "0.82.1",
-    "defaultProvider": "openai-codex",
-    "defaultModel": "gpt-5.6-sol",
-    "defaultThinkingLevel": "high",
-    "theme": "dark",
-    "externalEditor": "nvim",
-    "packages": []
+  "lastChangelogVersion": "0.82.1",
+  "defaultProvider": "xai",
+  "defaultModel": "grok-4.5",
+  "defaultThinkingLevel": "high",
+  "theme": "dark",
+  "externalEditor": "nvim",
+  "packages": []
 }
-
