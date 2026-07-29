@@ -26,11 +26,20 @@ Reload a running Pi session after editing an extension:
 
 `git-worktree.ts` provides:
 
-- `/wt [--base <ref>] [task]` (alias: `/worktree`) to create a task branch and worktree.
+- `/wt [--base <ref>] [--no-prompt] [task]` (alias: `/worktree`) to create a task branch and worktree.
 - `/wtdone` (alias: `/worktree-done`) to safely remove a task worktree.
 - Conversation-aware task inference. `/wt` can omit `task` when the preceding conversation establishes it; persisted sessions are forked into the worktree session so the full context is retained.
 - A generated kebab-case `pi/...` branch and matching Human Title for the cmux workspace and Pi session.
+- `--no-prompt` to keep that naming/layout behavior while launching Pi idle (no kickoff prompt). Useful when you only want a named worktree workspace and will drive Pi yourself.
 - A fixed cmux layout: equal-width left/right columns, `nvim .` above a fresh terminal in a 70/30 left-column split, and Pi in the right column.
+
+Examples:
+
+```text
+/wt fix auth cookie refresh
+/wt --base main --no-prompt explore package upgrades
+/wt --no-prompt
+```
 
 ### Dependencies
 

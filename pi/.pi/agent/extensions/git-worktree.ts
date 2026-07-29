@@ -63,13 +63,15 @@ type ConversationContext = {
 
 /**
  * One-file handoff from the creating Pi process to the Pi process launched in
- * the worktree. The file is also passed as Pi's sole positional CLI argument,
- * so its prompt starts the task without shell-quoting the task or metadata.
+ * the worktree. When `prompt` is set, the file is also passed as Pi's sole
+ * positional CLI argument (`@config`) so the task starts without shell-quoting
+ * the prompt or metadata. When `prompt` is omitted, Pi still loads the config
+ * via `PI_WORKTREE_CONFIG` for session naming/metadata but stays idle.
  */
 type WorktreeLaunchConfig = {
 	version: 1;
 	sessionName: string;
-	prompt: string;
+	prompt?: string;
 	sourceSession?: string;
 	metadata: WorktreeMetadata;
 };
@@ -291,13 +293,36 @@ async function uniqueBranchName(repoRoot: string, slug: string): Promise<string>
 	}
 }
 
-function parseArgs(args: string): { base?: string; task: string } {
-	const trimmed = args.trim();
-	const baseMatch = trimmed.match(/^--base\s+(\S+)(?:\s+(.+))?$/s);
-	if (baseMatch) {
-		return { base: baseMatch[1], task: (baseMatch[2] ?? "").trim().replace(/^['"]|['"]$/g, "") };
+function parseArgs(args: string): { base?: string; noPrompt: boolean; task: string } {
+	const tokens = args.trim().match(/(?:[^"\s]+|"[^"]*"|'[^']*')+/g) ?? [];
+	let base: string | undefined;
+	let noPrompt = false;
+	const taskParts: string[] = [];
+
+	for (let index = 0; index < tokens.length; index += 1) {
+		const token = tokens[index];
+		if (token === "--no-prompt") {
+			noPrompt = true;
+			continue;
+		}
+		if (token === "--base") {
+			base = tokens[index + 1];
+			if (base) index += 1;
+			continue;
+		}
+		const baseEquals = token.match(/^--base=(.+)$/);
+		if (baseEquals) {
+			base = baseEquals[1];
+			continue;
+		}
+		taskParts.push(token);
 	}
-	return { task: trimmed.replace(/^['"]|['"]$/g, "") };
+
+	return {
+		base,
+		noPrompt,
+		task: taskParts.join(" ").trim().replace(/^['"]|['"]$/g, ""),
+	};
 }
 
 function kickoffPrompt(task: string, conversation: ConversationContext, sourceSession?: string): string {
@@ -318,14 +343,14 @@ function kickoffPrompt(task: string, conversation: ConversationContext, sourceSe
 
 async function createLaunchConfig(
 	metadata: WorktreeMetadata,
-	prompt: string,
+	prompt?: string,
 	sourceSession?: string,
 ): Promise<string> {
 	const configPath = join(tmpdir(), `pi-worktree-${process.pid}-${Date.now()}.json`);
 	const config: WorktreeLaunchConfig = {
 		version: 1,
 		sessionName: metadata.title ?? metadata.task ?? metadata.branch,
-		prompt,
+		...(prompt ? { prompt } : {}),
 		sourceSession,
 		metadata,
 	};
@@ -340,7 +365,9 @@ function parseLaunchConfig(value: unknown): WorktreeLaunchConfig {
 	const metadata = config.metadata as Partial<WorktreeMetadata> | undefined;
 	if (config.version !== 1) throw new Error(`unsupported config version: ${String(config.version)}`);
 	if (typeof config.sessionName !== "string" || !config.sessionName) throw new Error("sessionName must be a non-empty string");
-	if (typeof config.prompt !== "string" || !config.prompt) throw new Error("prompt must be a non-empty string");
+	if (config.prompt !== undefined && (typeof config.prompt !== "string" || !config.prompt)) {
+		throw new Error("prompt must be a non-empty string when provided");
+	}
 	if (!metadata || typeof metadata !== "object") throw new Error("metadata must be an object");
 
 	for (const key of ["repoRoot", "worktreePath", "branch", "baseRef"] as const) {
@@ -358,10 +385,36 @@ async function loadLaunchConfig(configPath: string): Promise<WorktreeLaunchConfi
 	return parseLaunchConfig(JSON.parse(contents) as unknown);
 }
 
-function piCommand(metadata: WorktreeMetadata, configPath: string, sourceSession?: string): string {
-	const configArgument = `@${configPath}`;
+/**
+ * Pi's `--fork` loads the source session from disk and rejects empty/invalid
+ * files. Brand-new sessions often have a path before the header is flushed, so
+ * only return a path when the on-disk file is actually forkable.
+ */
+async function resolveForkableSourceSession(sessionFile: string | undefined): Promise<string | undefined> {
+	if (!sessionFile || !existsSync(sessionFile)) return undefined;
+
+	try {
+		const contents = await readFile(sessionFile, "utf8");
+		const firstLine = contents
+			.split("\n")
+			.map((line) => line.trim())
+			.find(Boolean);
+		if (!firstLine) return undefined;
+
+		const header = JSON.parse(firstLine) as { type?: unknown; id?: unknown };
+		if (header.type !== "session" || typeof header.id !== "string") return undefined;
+		return sessionFile;
+	} catch {
+		return undefined;
+	}
+}
+
+function piCommand(metadata: WorktreeMetadata, configPath: string, sourceSession?: string, prompt?: string): string {
+	// Only pass `@config` when there is a kickoff prompt. Session naming and
+	// worktree metadata still load from PI_WORKTREE_CONFIG on session_start.
+	const promptArgument = prompt ? ` ${shellQuote(`@${configPath}`)}` : "";
 	const forkArgument = sourceSession ? ` --fork ${shellQuote(sourceSession)}` : "";
-	return `cd ${shellQuote(metadata.worktreePath)} && PI_WORKTREE_CONFIG=${shellQuote(configPath)} pi${forkArgument} ${shellQuote(configArgument)}`;
+	return `cd ${shellQuote(metadata.worktreePath)} && PI_WORKTREE_CONFIG=${shellQuote(configPath)} pi${forkArgument}${promptArgument}`;
 }
 
 async function currentCmuxWorkspace(): Promise<CurrentCmuxWorkspace> {
@@ -387,7 +440,7 @@ async function currentCmuxWorkspace(): Promise<CurrentCmuxWorkspace> {
  * Build the fixed worktree workspace: equal-width editor/shell and Pi columns,
  * with the editor occupying 70% of the left column.
  */
-function buildLayout(metadata: WorktreeMetadata, configPath: string, sourceSession?: string): CmuxLayout {
+function buildLayout(metadata: WorktreeMetadata, configPath: string, sourceSession?: string, prompt?: string): CmuxLayout {
 	return {
 		direction: "horizontal",
 		split: 0.5,
@@ -405,7 +458,7 @@ function buildLayout(metadata: WorktreeMetadata, configPath: string, sourceSessi
 					surfaces: [{
 						type: "terminal",
 						name: "Pi",
-						command: piCommand(metadata, configPath, sourceSession),
+						command: piCommand(metadata, configPath, sourceSession, prompt),
 						focus: true,
 					}],
 				},
@@ -414,11 +467,11 @@ function buildLayout(metadata: WorktreeMetadata, configPath: string, sourceSessi
 	};
 }
 
-async function openCmuxWorkspace(metadata: WorktreeMetadata, prompt: string, sourceSession?: string): Promise<string> {
+async function openCmuxWorkspace(metadata: WorktreeMetadata, prompt?: string, sourceSession?: string): Promise<string> {
 	const configPath = await createLaunchConfig(metadata, prompt, sourceSession);
 	try {
 		const currentWorkspace = await currentCmuxWorkspace();
-		const layout = buildLayout(metadata, configPath, sourceSession);
+		const layout = buildLayout(metadata, configPath, sourceSession, prompt);
 		const args = [
 			"new-workspace",
 			"--name",
@@ -587,11 +640,11 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 	});
 
 	async function handler(args: string, ctx: ExtensionCommandContext) {
-		const { base, task: explicitTask } = parseArgs(args);
+		const { base, noPrompt, task: explicitTask } = parseArgs(args);
 		const conversation = conversationContext(ctx);
 		const taskSeed = explicitTask || conversation.inferredTask;
 		if (!taskSeed) {
-			ctx.ui.notify("Usage: /wt [--base <ref>] [task] (task may be inferred from the preceding conversation)", "error");
+			ctx.ui.notify("Usage: /wt [--base <ref>] [--no-prompt] [task] (task may be inferred from the preceding conversation)", "error");
 			return;
 		}
 
@@ -615,10 +668,10 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 				task,
 				title: identity.title,
 			};
-			const sourceSession = ctx.sessionManager.getSessionFile();
-			const prompt = kickoffPrompt(task, conversation, sourceSession);
+			const sourceSession = await resolveForkableSourceSession(ctx.sessionManager.getSessionFile());
+			const prompt = noPrompt ? undefined : kickoffPrompt(task, conversation, sourceSession);
 
-			ctx.ui.notify(`Creating ${identity.title} (${branch}) from ${baseRef}...`, "info");
+			ctx.ui.notify(`Creating ${identity.title} (${branch}) from ${baseRef}${noPrompt ? " without kickoff prompt" : ""}...`, "info");
 			await git(["worktree", "add", "-b", branch, worktreePath, baseRef], repoRoot);
 
 			const workspace = await openCmuxWorkspace(metadata, prompt, sourceSession);
@@ -701,7 +754,7 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 	}
 
 	pi.registerCommand("wt", {
-		description: "Continue a task in a conversation-aware git worktree and three-pane cmux workspace",
+		description: "Continue a task in a conversation-aware git worktree and three-pane cmux workspace. Use --no-prompt to name/open idle Pi without auto-starting the task.",
 		handler,
 	});
 
