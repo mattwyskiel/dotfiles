@@ -42,9 +42,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/shadcn/ui.git",
       "skillPath": "skills/shadcn/SKILL.md",
-      "skillFolderHash": "962eb7ef77f17e0bce530153d4fec2136c5fa061",
+      "skillFolderHash": "0a31c3c2535a62b22bf23a1b10a142178a6b7dbf",
       "installedAt": "2026-04-21T18:57:43.460Z",
-      "updatedAt": "2026-06-30T22:17:37.126Z"
+      "updatedAt": "2026-07-30T16:59:26.146Z"
     },
     "frontend-design": {
       "source": "anthropics/skills",
@@ -70,9 +70,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/vercel/turborepo.git",
       "skillPath": "skills/turborepo/SKILL.md",
-      "skillFolderHash": "f8c5730d240183f8e0d1aa2c52a641dd474ee350",
+      "skillFolderHash": "ffe7bbcfcd4eb22b91e5cc60aac2576411e85a6a",
       "installedAt": "2026-04-25T14:55:28.092Z",
-      "updatedAt": "2026-07-22T12:21:28.471Z"
+      "updatedAt": "2026-07-31T14:51:43.920Z"
     },
     "pulumi-best-practices": {
       "source": "pulumi/agent-skills",
@@ -133,9 +133,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/google/skills.git",
       "skillPath": "skills/cloud/gcloud/SKILL.md",
-      "skillFolderHash": "750ec80d0f3286514eaa73929d7c7f6ede50b181",
+      "skillFolderHash": "9ef43221b2a562b71ea3fd3ca6d7219ad1db5e61",
       "installedAt": "2026-06-16T14:05:55.572Z",
-      "updatedAt": "2026-06-28T20:00:20.040Z"
+      "updatedAt": "2026-07-30T16:59:28.932Z"
     },
     "google-cloud-recipe-auth": {
       "source": "google/skills",
@@ -151,9 +151,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/vercel-labs/agent-skills.git",
       "skillPath": "skills/react-view-transitions/SKILL.md",
-      "skillFolderHash": "394c075e3b28315afc5fe1a6b4492ec20cb2a89f",
+      "skillFolderHash": "56b5533b9503fc1dbdb727e5fcabd4abab3fe19c",
       "installedAt": "2026-07-10T16:27:32.973Z",
-      "updatedAt": "2026-07-22T12:21:22.610Z"
+      "updatedAt": "2026-07-30T16:59:23.212Z"
     },
     "pulumi-debug-failed-operation": {
       "source": "pulumi/agent-skills",
