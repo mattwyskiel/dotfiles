@@ -63,5 +63,8 @@ return {
         end,
       },
     }
+
+    -- other LSPs not provided by Mason
+    vim.lsp.enable 'sourcekit'
   end,
 }
