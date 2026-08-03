@@ -64,3 +64,5 @@ export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib:$DYLD_FALLBACK_LIBRARY_P
 
 export DOCUMENTS="/Users/matthewwyskiel/Library/CloudStorage/OneDrive-Personal/Documents"
 export EDITOR="nvim"
+export PATH="/opt/homebrew/opt/ffmpeg-full/bin:$PATH"
+export PATH="/opt/homebrew/opt/curl/bin:$PATH"
