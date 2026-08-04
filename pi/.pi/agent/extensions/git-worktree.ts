@@ -1,5 +1,5 @@
-import { complete } from "@earendil-works/pi-ai";
-import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import { complete } from "@earendil-works/pi-ai/compat";
+import { buildSessionContext, type ExtensionAPI, type ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { execFile as execFileCallback, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { chmod, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
@@ -232,7 +232,10 @@ function contentText(content: unknown): string {
  * sessions are forked so the launched Pi still receives the complete context.
  */
 function conversationContext(ctx: ExtensionCommandContext): ConversationContext {
-	const messages = ctx.sessionManager.buildSessionContext().messages as Array<{
+	const messages = buildSessionContext(
+		ctx.sessionManager.getEntries(),
+		ctx.sessionManager.getLeafId(),
+	).messages as Array<{
 		role: string;
 		content?: unknown;
 		summary?: unknown;
