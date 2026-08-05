@@ -22,6 +22,16 @@ Reload a running Pi session after editing an extension:
 /reload
 ```
 
+## Codex usage extension
+
+`codex-usage.ts` displays the remaining OpenAI Codex subscription windows in Pi's footer. It refreshes when a session starts, after each completed agent run, and on demand:
+
+```text
+/codex-usage
+```
+
+The command also shows reset times and any additional model-specific limits reported by OpenAI. It reuses Pi's `openai-codex` OAuth login; it does not read or store credentials itself.
+
 ## Git worktree extension
 
 `git-worktree.ts` provides:
