@@ -5,8 +5,9 @@ metadata:
 description: >-
   Provides safety-critical validation, guardrails, and data reduction for gcloud
   CLI operations across Google Cloud Platform (GCP) services and infrastructure.
-  Use when planning, generating, invoking, executing, or managing any gcloud CLI
-  commands or GCP resources with gcloud. Don't use when writing Google Cloud
+  Use when planning, generating, constructing, proposing, describing, or
+  executing any gcloud CLI commands - including when answering questions about
+  gcloud syntax, or formatting flags. Don't use when writing Google Cloud
   client library code or raw REST/gRPC API requests.
 ---
 
@@ -55,9 +56,11 @@ description: >-
 >
 >     -   **Step 1**: Syntax Validation via `gcloud help <leaf_command>`
 >     -   **Step 2**: Parameter Verification (confirming required and optional
->         flags, and explicitly checking if the `--dry-run` flag is supported)
->     -   **Step 3**: Dry-Run Command Proposal (If `--dry-run` is supported,
->         there MUST be a `--dry-run` invocation before the next step.)
+>         flags, and explicitly checking if the `--dry-run` or `--validate-only`
+>         flag is supported)
+>     -   **Step 3**: Dry-Run Command Proposal (If `--dry-run` or
+>         `--validate-only` is supported, there MUST be a `--dry-run` or
+>         `--validate-only` invocation before the next step.)
 >     -   **Step 4**: Command Proposal & Authorization (If the command is on the
 >         "Prohibited Operations" denylist, state that autonomous execution is
 >         forbidden, and the user MUST be explicitly asked for authorization to
@@ -236,10 +239,10 @@ human-in-the-loop authorization:
 
 ### Execution Guidelines
 
-*   **Dry Run (Mandatory)**: If the `--dry-run` flag (or equivalent) is listed
-    in the command help output, ALWAYS include the flag in the proposed command
-    or initial execution step. ALWAYS preview changes with `--dry-run` prior to
-    actual execution.
+*   **Dry Run (Mandatory)**: If the `--dry-run` or `--validate-only` flag (or
+    equivalent) is listed in the command help output, ALWAYS include the flag in
+    the proposed command or initial execution step. ALWAYS preview changes with
+    `--dry-run` or `--validate-only` prior to actual execution.
 
 *   **Long Running Operations**: For commands that support it, the `--async`
     flag is highly recommended for long-running operations to avoid blocking the

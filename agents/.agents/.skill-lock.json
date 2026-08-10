@@ -70,9 +70,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/vercel/turborepo.git",
       "skillPath": "skills/turborepo/SKILL.md",
-      "skillFolderHash": "ffe7bbcfcd4eb22b91e5cc60aac2576411e85a6a",
+      "skillFolderHash": "439f586b421147775c7cc707b57a6141684fcbef",
       "installedAt": "2026-04-25T14:55:28.092Z",
-      "updatedAt": "2026-07-31T14:51:43.920Z"
+      "updatedAt": "2026-08-10T01:07:34.673Z"
     },
     "pulumi-best-practices": {
       "source": "pulumi/agent-skills",
@@ -133,9 +133,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/google/skills.git",
       "skillPath": "skills/cloud/gcloud/SKILL.md",
-      "skillFolderHash": "9ef43221b2a562b71ea3fd3ca6d7219ad1db5e61",
+      "skillFolderHash": "4487ce06ac34e44019ca4f8e3aa46182d6b55f0b",
       "installedAt": "2026-06-16T14:05:55.572Z",
-      "updatedAt": "2026-07-30T16:59:28.932Z"
+      "updatedAt": "2026-08-10T01:07:35.645Z"
     },
     "google-cloud-recipe-auth": {
       "source": "google/skills",
@@ -169,9 +169,19 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/aws/agent-toolkit-for-aws.git",
       "skillPath": "skills/core-skills/aws-iam/SKILL.md",
-      "skillFolderHash": "5da0a0c41f57fbf7470deb7970a5f403ab40997d",
+      "skillFolderHash": "53fafe6165ae796ce54b8d9c32db1af279c97933",
       "installedAt": "2026-07-10T16:51:32.137Z",
-      "updatedAt": "2026-07-10T16:51:32.137Z"
+      "updatedAt": "2026-08-10T01:07:37.049Z"
+    },
+    "next-dev-loop": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/vercel/next.js.git",
+      "ref": "canary",
+      "skillPath": "skills/next-dev-loop/SKILL.md",
+      "skillFolderHash": "97a73f9ed9bec4b85be01503aa7ea6a98b602366",
+      "installedAt": "2026-08-05T20:02:47.842Z",
+      "updatedAt": "2026-08-05T20:02:47.842Z"
     }
   },
   "dismissed": {
