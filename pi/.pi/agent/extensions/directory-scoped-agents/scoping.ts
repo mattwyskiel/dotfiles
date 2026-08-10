@@ -5,6 +5,37 @@ import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path
 /** File names recognized by Pi as project instruction files, in precedence order. */
 export const INSTRUCTION_FILE_NAMES = ["AGENTS.md", "AGENTS.MD", "CLAUDE.md", "CLAUDE.MD"] as const;
 
+/** Common dependency, generated-output, cache, and VCS directories excluded from nested scopes. */
+export const EXCLUDED_DIRECTORY_NAMES = [
+	".cache",
+	".git",
+	".gradle",
+	".hg",
+	".next",
+	".nuxt",
+	".output",
+	".svelte-kit",
+	".svn",
+	".terraform",
+	".turbo",
+	".venv",
+	"DerivedData",
+	"Pods",
+	"__pycache__",
+	"bower_components",
+	"build",
+	"cdk.out",
+	"coverage",
+	"dist",
+	"node_modules",
+	"out",
+	"target",
+	"vendor",
+	"venv",
+] as const;
+
+const EXCLUDED_DIRECTORY_NAME_SET = new Set<string>(EXCLUDED_DIRECTORY_NAMES);
+
 /** How to interpret a target path that does not exist yet. */
 export type TargetKind = "auto" | "file" | "directory";
 
@@ -92,6 +123,14 @@ export function findScopedInstructions(
 
 	if (!isWithinRoot(resolvedRoot, targetDirectory)) return [];
 
+	const relativeDirectory = relative(resolvedRoot, targetDirectory);
+	if (
+		relativeDirectory
+		&& relativeDirectory.split(sep).some((segment) => EXCLUDED_DIRECTORY_NAME_SET.has(segment))
+	) {
+		return [];
+	}
+
 	const directories: string[] = [];
 	let current = resolve(targetDirectory);
 	while (current !== resolvedRoot) {
@@ -122,6 +161,7 @@ export function formatScopedInstructions(root: string, target: string, instructi
 	return [
 		`<directory_scoped_instructions target="${escapeAttribute(displayPath(target))}">`,
 		"Apply each instruction only to files within its scope. When instructions conflict, the more deeply nested scope is more specific.",
+		`These scopes exclude dependency, generated-output, cache, and VCS subtrees named: ${EXCLUDED_DIRECTORY_NAMES.join(", ")}.`,
 		...sections,
 		"</directory_scoped_instructions>",
 	].join("\n\n");

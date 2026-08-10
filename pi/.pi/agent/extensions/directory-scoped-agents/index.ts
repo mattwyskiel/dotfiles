@@ -5,6 +5,7 @@ import {
 	type ToolCallEvent,
 } from "@earendil-works/pi-coding-agent";
 import {
+	EXCLUDED_DIRECTORY_NAMES,
 	findScopedInstructions,
 	formatScopedInstructions,
 	INSTRUCTION_FILE_NAMES,
@@ -104,6 +105,8 @@ export default function directoryScopedAgents(pi: ExtensionAPI): void {
 			systemPrompt: `${event.systemPrompt}\n\n${EXTENSION_HEADING}
 
 Nested AGENTS.md (or CLAUDE.md) files below the current working directory are directory-scoped. Before a built-in read, edit, write, ls, find, or grep crosses into a nested scope, this extension pauses that operation once and returns the applicable instructions. Read those instructions, apply them only within their declared scopes, then retry the operation. More deeply nested instructions are more specific when scoped instructions conflict.
+
+Nested instructions do not apply inside common dependency, generated-output, cache, and VCS directories (${EXCLUDED_DIRECTORY_NAMES.join(", ")}).
 
 Prefer Pi's built-in path tools for filesystem access so this check can run. Bash commands and custom tools cannot be scoped reliably; before using them on a nested path, first access that path with a built-in path tool so its instructions are activated.${activeContext}`,
 		};

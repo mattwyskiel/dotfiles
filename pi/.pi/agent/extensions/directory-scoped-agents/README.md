@@ -38,6 +38,20 @@ The extension recognizes the same per-directory filename precedence as Pi:
 
 Only the first readable matching file in each directory is used.
 
+### Excluded directories
+
+Nested instructions are not loaded or applied inside common dependency, generated-output, cache, and version-control subtrees:
+
+```text
+.cache       .git         .gradle      .hg          .next
+.nuxt        .output      .svelte-kit  .svn         .terraform
+.turbo       .venv        DerivedData  Pods         __pycache__
+bower_components          build        cdk.out      coverage
+dist         node_modules out          target       vendor       venv
+```
+
+Matching is by complete directory name at any depth below the session root. For example, `packages/node_modules-source/` is not excluded. A path inside an excluded subtree activates neither an instruction file in that subtree nor one in a parent nested scope.
+
 ## Supported tools
 
 The automatic gate covers Pi's built-in path-oriented tools:

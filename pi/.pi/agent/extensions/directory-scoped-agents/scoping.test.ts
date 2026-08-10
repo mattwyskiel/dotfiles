@@ -3,6 +3,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+	EXCLUDED_DIRECTORY_NAMES,
 	findScopedInstructions,
 	formatScopedInstructions,
 	isSkillFilePath,
@@ -64,6 +65,32 @@ describe("findScopedInstructions", () => {
 
 		expect(findScopedInstructions(root, outside, "directory")).toEqual([]);
 		expect(isWithinRoot(root, outside)).toBe(false);
+	});
+
+	test("excludes dependency, generated-output, cache, and VCS subtrees", () => {
+		const root = fixture();
+		for (const directory of EXCLUDED_DIRECTORY_NAMES) {
+			const subtree = join(root, "packages", directory, "dependency");
+			mkdirSync(subtree, { recursive: true });
+			writeFileSync(join(subtree, "AGENTS.md"), `${directory} rules`);
+		}
+		writeFileSync(join(root, "packages", "AGENTS.md"), "package rules");
+
+		for (const directory of EXCLUDED_DIRECTORY_NAMES) {
+			expect(
+				findScopedInstructions(root, `packages/${directory}/dependency/index.ts`, "file"),
+			).toEqual([]);
+		}
+	});
+
+	test("matches excluded directory names by complete path segment", () => {
+		const root = fixture();
+		mkdirSync(join(root, "node_modules-source"), { recursive: true });
+		writeFileSync(join(root, "node_modules-source", "AGENTS.md"), "source rules");
+
+		const instructions = findScopedInstructions(root, "node_modules-source/index.ts", "file");
+
+		expect(instructions.map((instruction) => instruction.content)).toEqual(["source rules"]);
 	});
 });
 
