@@ -296,16 +296,21 @@ async function uniqueBranchName(repoRoot: string, slug: string): Promise<string>
 	}
 }
 
-function parseArgs(args: string): { base?: string; noPrompt: boolean; task: string } {
+function parseArgs(args: string): { base?: string; noPrompt: boolean; noPr: boolean; task: string } {
 	const tokens = args.trim().match(/(?:[^"\s]+|"[^"]*"|'[^']*')+/g) ?? [];
 	let base: string | undefined;
 	let noPrompt = false;
+	let noPr = false;
 	const taskParts: string[] = [];
 
 	for (let index = 0; index < tokens.length; index += 1) {
 		const token = tokens[index];
 		if (token === "--no-prompt") {
 			noPrompt = true;
+			continue;
+		}
+		if (token === "--no-pr") {
+			noPr = true;
 			continue;
 		}
 		if (token === "--base") {
@@ -324,11 +329,17 @@ function parseArgs(args: string): { base?: string; noPrompt: boolean; task: stri
 	return {
 		base,
 		noPrompt,
+		noPr,
 		task: taskParts.join(" ").trim().replace(/^['"]|['"]$/g, ""),
 	};
 }
 
-function kickoffPrompt(task: string, conversation: ConversationContext, sourceSession?: string): string {
+function kickoffPrompt(
+	task: string,
+	conversation: ConversationContext,
+	sourceSession?: string,
+	openPr = true,
+): string {
 	const lines = [
 		"Continue this coding task in the new git worktree.",
 		sourceSession
@@ -337,6 +348,10 @@ function kickoffPrompt(task: string, conversation: ConversationContext, sourceSe
 		`Task to continue: ${task}`,
 		"Inspect the worktree state, then continue the requested implementation without asking the user to repeat context.",
 	];
+
+	if (openPr) {
+		lines.push("When the implementation is ready, commit and push the changes, open a pull request, then watch the pull request for review comments and address actionable feedback.");
+	}
 
 	if (!sourceSession && conversation.transcript) {
 		lines.push("", "Preceding conversation:", conversation.transcript);
@@ -643,11 +658,11 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 	});
 
 	async function handler(args: string, ctx: ExtensionCommandContext) {
-		const { base, noPrompt, task: explicitTask } = parseArgs(args);
+		const { base, noPrompt, noPr, task: explicitTask } = parseArgs(args);
 		const conversation = conversationContext(ctx);
 		const taskSeed = explicitTask || conversation.inferredTask;
 		if (!taskSeed) {
-			ctx.ui.notify("Usage: /wt [--base <ref>] [--no-prompt] [task] (task may be inferred from the preceding conversation)", "error");
+			ctx.ui.notify("Usage: /wt [--base <ref>] [--no-prompt] [--no-pr] [task] (task may be inferred from the preceding conversation)", "error");
 			return;
 		}
 
@@ -672,7 +687,7 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 				title: identity.title,
 			};
 			const sourceSession = await resolveForkableSourceSession(ctx.sessionManager.getSessionFile());
-			const prompt = noPrompt ? undefined : kickoffPrompt(task, conversation, sourceSession);
+			const prompt = noPrompt ? undefined : kickoffPrompt(task, conversation, sourceSession, !noPr);
 
 			ctx.ui.notify(`Creating ${identity.title} (${branch}) from ${baseRef}${noPrompt ? " without kickoff prompt" : ""}...`, "info");
 			await git(["worktree", "add", "-b", branch, worktreePath, baseRef], repoRoot);
@@ -757,7 +772,7 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 	}
 
 	pi.registerCommand("wt", {
-		description: "Continue a task in a conversation-aware git worktree and three-pane cmux workspace. Use --no-prompt to name/open idle Pi without auto-starting the task.",
+		description: "Continue a task in a conversation-aware git worktree and three-pane cmux workspace. The prompted agent opens a PR and watches for review comments by default; use --no-pr to disable that or --no-prompt to open idle Pi.",
 		handler,
 	});
 
