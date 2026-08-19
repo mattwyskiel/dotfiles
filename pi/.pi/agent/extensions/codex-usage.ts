@@ -134,7 +134,10 @@ function roundedPercent(value: number): number {
 function statusText(snapshot: UsageSnapshot): string {
 	const windows = [snapshot.primary, snapshot.secondary]
 		.filter((window): window is UsageWindow => window !== undefined)
-		.map((window) => `${window.label} ${roundedPercent(window.remainingPercent)}% left`);
+		.map((window) => {
+			const reset = relativeTime(window.resetsAt);
+			return `${window.label} ${roundedPercent(window.remainingPercent)}% left${reset ? `, resets in ${reset}` : ""}`;
+		});
 	return `Codex: ${windows.join(" · ")}`;
 }
 
