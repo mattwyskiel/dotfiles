@@ -1,6 +1,7 @@
 min_version = "2026.8.0"
 
 [tools]
+"cargo:tree-sitter-cli" = { version = "0.26.12", default-features = false }
 "conda:clang-tools" = "22.1.8"
 fd = "10.4.2"
 go = "1.26.6"
@@ -21,5 +22,4 @@ ripgrep = "15.2.0"
 rust = "1.97.1"
 rust-analyzer = "2026-08-17.4"
 stylua = "2.5.2"
-tree-sitter = "0.26.12"
 uv = "0.12.5"
