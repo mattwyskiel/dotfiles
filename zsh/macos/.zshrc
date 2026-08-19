@@ -35,9 +35,6 @@ alias refresh="$HOME/dotfiles/scripts/update-dotfiles.sh"
 alias vopen="$HOME/dotfiles/scripts/vopen.sh"
 alias awscheck="$HOME/dotfiles/scripts/aws-sso-check.sh"
 
-# run 'git pull' on the dotfiles repo
-refresh
-
 export TURBO_UI=true
 
 # bun completions
