@@ -1,14 +1,8 @@
 return {
-  -- Main LSP Configuration
+  -- Community-maintained defaults consumed by vim.lsp.config().
+  -- Language server executables are installed declaratively by mise.
   'neovim/nvim-lspconfig',
   dependencies = {
-    -- Automatically install LSPs and related tools to stdpath for Neovim
-    -- Mason must be loaded before its dependents so we need to set it up here.
-    -- NOTE: `opts = {}` is the same as calling `require('mason').setup({})`
-    { 'mason-org/mason.nvim', opts = {} },
-    'mason-org/mason-lspconfig.nvim',
-    'WhoIsSethDaniel/mason-tool-installer.nvim',
-
     'b0o/schemastore.nvim',
 
     -- Useful status updates for LSP.
@@ -43,28 +37,20 @@ return {
 
     local servers = require 'mattwyskiel.plugins.lspconfig.servers'
 
-    ---@type MasonLspconfigSettings
-    ---@diagnostic disable-next-line: missing-fields
-    require('mason-lspconfig').setup {
-      ensure_installed = {}, -- explicitly set to an empty table (already handled above)
-      automatic_installation = false, -- already handled above
-      handlers = {
-        function(server_name)
-          local server = servers[server_name] or {}
-          -- This handles overriding only values explicitly passed
-          -- by the server configuration above. Useful when disabling
-          -- certain features of an LSP (for example, turning off formatting for ts_ls)
-          server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-          server.capabilities.textDocument.foldingRange = {
-            dynamicRegistration = false,
-            lineFoldingOnly = true,
-          }
-          vim.lsp.enable(server_name)
-        end,
-      },
-    }
+    for server_name, server in pairs(servers) do
+      server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+      server.capabilities.textDocument.foldingRange = {
+        dynamicRegistration = false,
+        lineFoldingOnly = true,
+      }
 
-    -- other LSPs not provided by Mason
-    vim.lsp.enable 'sourcekit'
+      vim.lsp.config(server_name, server)
+      vim.lsp.enable(server_name)
+    end
+
+    -- SourceKit ships with Xcode and is not managed by mise.
+    if vim.fn.has 'mac' == 1 and vim.fn.executable 'sourcekit-lsp' == 1 then
+      vim.lsp.enable 'sourcekit'
+    end
   end,
 }

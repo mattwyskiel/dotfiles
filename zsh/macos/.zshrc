@@ -16,8 +16,8 @@ export PATH=/Users/matthewwyskiel/.sst/bin:$PATH
 export CLAUDE_HOME="$HOME/.claude"
 export PATH="$CLAUDE_HOME/local:$PATH"
 
-# Created by `pipx` on 2024-04-25 17:37:44
-export PATH="$PATH:/Users/matthewwyskiel/.local/bin"
+# User-installed binaries, including mise.
+export PATH="$HOME/.local/bin:$PATH"
 
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/Users/matthewwyskiel/Downloads/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/matthewwyskiel/Downloads/google-cloud-sdk/path.zsh.inc'; fi
@@ -63,3 +63,8 @@ export DOCUMENTS="/Users/matthewwyskiel/Library/CloudStorage/OneDrive-Personal/D
 export EDITOR="nvim"
 export PATH="/opt/homebrew/opt/ffmpeg-full/bin:$PATH"
 export PATH="/opt/homebrew/opt/curl/bin:$PATH"
+
+# Activate the globally declared toolchain from ~/.config/mise/config.toml.
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh)"
+fi

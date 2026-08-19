@@ -6,53 +6,25 @@ This directory contains utility scripts for setting up and managing the dotfiles
 
 ### System Setup Scripts
 
+`init.sh` orchestrates setup in three stages: operating-system packages, the portable mise toolchain, and common dotfile links.
+
 #### `init-macos.sh`
-Platform-specific setup script for macOS systems.
 
-**What it does:**
-- Installs Homebrew package manager if not present
-- Installs essential development tools:
-  - GNU Stow (for symlink management)
-  - Alacritty (terminal emulator)
-  - Hack Nerd Font
-  - Oh My Posh (shell prompt)
-  - Tmux (terminal multiplexer)
-  - Neovim (text editor)
-  - Ripgrep (search tool)
-  - fd (file finder)
-- Creates symlinks for all configuration files using GNU Stow
-- Sets up shell environment (zsh configuration)
-
-**Usage:** `./scripts/init-macos.sh`
+Installs macOS-only dependencies with Homebrew and links the Ghostty and macOS Zsh configurations.
 
 #### `init-ubuntu.sh`
-Platform-specific setup script for Ubuntu/Linux systems.
 
-**What it does:**
-- Installs packages using apt package manager
-- Installs essential development tools:
-  - GNU Stow
-  - Oh My Posh (via curl installation)
-  - Tmux
-  - Neovim (via custom build script)
-  - Ripgrep
-  - Zsh shell
-- Changes default shell to zsh if needed
-- Creates symlinks for all configuration files
-- Sets up Ubuntu-specific shell environment
+Installs Ubuntu/WSL system dependencies in one apt transaction, configures Zsh, and links the Ubuntu Zsh configuration.
 
-**Usage:** `./scripts/init-ubuntu.sh`
+#### `install-dev-tools.sh`
 
-#### `install-neovim-ubuntu.sh`
-Specialized script for building Neovim from source on Ubuntu systems.
+Installs mise when needed, links its global configuration, and installs the pinned Neovim toolchain and language servers.
 
-**What it does:**
-- Installs build dependencies (ninja-build, gettext, cmake, curl, build-essential)
-- Clones Neovim repository from GitHub
-- Builds and installs the stable release
-- Cleans up build artifacts
+#### `link-dotfiles.sh`
 
-**Usage:** Called automatically by `init-ubuntu.sh` or can be run standalone
+Links common Tmux, Neovim, Git, and Claude configuration, then restores the Neovim plugins pinned in `lazy-lock.json`.
+
+Run the complete setup through `./init.sh`; the individual scripts are implementation stages.
 
 ### Development Workflow Scripts
 
@@ -114,10 +86,8 @@ aws-sso-check.sh --help             # Show help
 ## Installation and Usage
 
 ### Fresh System Setup
-1. Clone the dotfiles repository
-2. Run the appropriate platform script:
-   - macOS: `./scripts/init-macos.sh`
-   - Ubuntu/Linux: `./scripts/init-ubuntu.sh`
+1. Clone the dotfiles repository.
+2. Run `./init.sh`; it selects and runs the appropriate platform stage automatically.
 
 ### Daily Workflow
 - **Start development session:** `vopen ~/path/to/project`
@@ -125,16 +95,14 @@ aws-sso-check.sh --help             # Show help
 - **Check AWS credentials:** `awscheck`
 
 ### Script Architecture
-- All scripts use `#!/bin/bash` or `#!/usr/bin/env bash` shebangs
-- Include error checking with conditional command execution
-- Provide informative output during execution
-- Support idempotent execution (safe to run multiple times)
-- Follow the principle of "check before install/configure"
+- `init.sh` owns orchestration; platform scripts only manage OS-specific concerns.
+- Shared mise and Stow work lives in dedicated cross-platform stages.
+- Scripts use strict Bash error handling and are safe to rerun.
 
 ### Dependencies
-- **macOS:** Requires Homebrew for package management
-- **Ubuntu:** Uses apt package manager and builds some tools from source
-- **All platforms:** Requires Git for repository management and GNU Stow for symlink management
+- **macOS:** Homebrew is installed automatically when missing.
+- **Ubuntu/WSL:** Required apt packages are installed automatically.
+- **All platforms:** mise installs the pinned editor toolchain from the checked-in declaration.
 
 ## Contributing
 When adding new scripts:

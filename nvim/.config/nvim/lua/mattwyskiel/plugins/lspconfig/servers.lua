@@ -1,5 +1,5 @@
--- Enable the following language servers
---  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
+-- Configure the language servers declared in ~/.config/mise/config.toml.
+-- Add installation dependencies there and editor-specific settings here.
 --
 --  Add any additional override configuration in the following tables. Available keys are:
 --  - cmd (table): Override the default command used to start the server
@@ -62,17 +62,5 @@ local servers = {
   autotools_ls = {},
   clangd = {},
 }
-
--- To check the current status of installed tools and/or manually install
--- other tools, you can run
---    :Mason
---
--- You can add other tools here that you want Mason to install
--- for you, so that they are available from within Neovim.
-local ensure_installed = vim.tbl_keys(servers or {})
-vim.list_extend(ensure_installed, {
-  'stylua', -- Used to format Lua code
-})
-require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
 return servers
