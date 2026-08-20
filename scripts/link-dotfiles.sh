@@ -5,7 +5,7 @@ set -euo pipefail
 DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 export PATH="$HOME/.local/bin:$PATH"
 
-stow --restow --dir="$DOTFILES_DIR" --target="$HOME" tmux nvim git agents pi mise
+stow --restow --dir="$DOTFILES_DIR" --target="$HOME" --adopt tmux nvim git agents pi mise
 
 # CLAUDE.md is itself an absolute symlink, which GNU Stow intentionally rejects.
 mkdir -p "$HOME/.claude"
