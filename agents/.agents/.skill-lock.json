@@ -70,9 +70,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/vercel/turborepo.git",
       "skillPath": "skills/turborepo/SKILL.md",
-      "skillFolderHash": "1570c1080ac1a64a0ec7e0b53cf79a5815692bc8",
+      "skillFolderHash": "34eaa69f05167f1e1a809c131547a80b83bf8208",
       "installedAt": "2026-04-25T14:55:28.092Z",
-      "updatedAt": "2026-08-20T14:18:13.625Z"
+      "updatedAt": "2026-08-30T19:22:14.068Z"
     },
     "pulumi-best-practices": {
       "source": "pulumi/agent-skills",
@@ -97,9 +97,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/pulumi/agent-skills.git",
       "skillPath": "pulumi/skills/pulumi-overview/SKILL.md",
-      "skillFolderHash": "c417c3887b1a2559926f608bbdb80c2257b98cf4",
+      "skillFolderHash": "902c45fb2132c1199fc22d67f5e1d4ec41f2ba37",
       "installedAt": "2026-06-16T14:02:40.474Z",
-      "updatedAt": "2026-06-16T14:02:40.474Z"
+      "updatedAt": "2026-08-30T19:22:13.229Z"
     },
     "pulumi-upgrade-provider": {
       "source": "pulumi/agent-skills",
@@ -133,9 +133,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/google/skills.git",
       "skillPath": "skills/cloud/gcloud/SKILL.md",
-      "skillFolderHash": "4487ce06ac34e44019ca4f8e3aa46182d6b55f0b",
+      "skillFolderHash": "faaeadea169886088811f78c600c131be7f1ebf5",
       "installedAt": "2026-06-16T14:05:55.572Z",
-      "updatedAt": "2026-08-10T01:07:35.645Z"
+      "updatedAt": "2026-08-30T19:22:15.612Z"
     },
     "google-cloud-recipe-auth": {
       "source": "google/skills",
@@ -151,9 +151,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/vercel-labs/agent-skills.git",
       "skillPath": "skills/react-view-transitions/SKILL.md",
-      "skillFolderHash": "d5c0250898ec0dd3fe06cd46a396cd500ebf5bd5",
+      "skillFolderHash": "13063dbbfc1b085cbc11b9bd5d4324aa2f41bb3a",
       "installedAt": "2026-07-10T16:27:32.973Z",
-      "updatedAt": "2026-08-20T14:18:12.095Z"
+      "updatedAt": "2026-08-30T19:22:12.184Z"
     },
     "pulumi-debug-failed-operation": {
       "source": "pulumi/agent-skills",
@@ -169,9 +169,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/aws/agent-toolkit-for-aws.git",
       "skillPath": "skills/core-skills/aws-iam/SKILL.md",
-      "skillFolderHash": "53fafe6165ae796ce54b8d9c32db1af279c97933",
+      "skillFolderHash": "fa551ce5da19be3e7b81b6574bfd9db32d9931f3",
       "installedAt": "2026-07-10T16:51:32.137Z",
-      "updatedAt": "2026-08-10T01:07:37.049Z"
+      "updatedAt": "2026-08-30T19:22:16.970Z"
     },
     "next-dev-loop": {
       "source": "vercel/next.js",
