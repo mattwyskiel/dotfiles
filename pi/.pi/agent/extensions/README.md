@@ -38,12 +38,13 @@ The command also shows reset times and any additional model-specific limits repo
 
 - `/wt [--base <ref>] [--no-prompt] [--no-pr] [task]` (alias: `/worktree`) to create a task branch and worktree.
 - `/wtdone` (alias: `/worktree-done`) to safely remove a task worktree.
-- Conversation-aware task inference. `/wt` can omit `task` when the preceding conversation establishes it; persisted sessions are forked into the worktree session so the full context is retained.
-- A generated kebab-case `pi/...` branch and matching Human Title for the cmux workspace and Pi session.
+- Conversation-aware task inference. `/wt` can omit `task` when the preceding conversation establishes it. cmux launches fork persisted sessions so the full context is retained; manual launches include the preceding conversation in their one-shot kickoff prompt.
+- A generated kebab-case `pi/...` branch and matching Human Title for the worktree's Pi session and, when available, its cmux workspace.
 - A default kickoff instruction to commit and push completed changes, open a pull request, watch it for review comments, and address actionable feedback.
 - `--no-pr` to omit the pull-request and review-watching instruction while retaining the rest of the kickoff prompt.
-- `--no-prompt` to keep the naming/layout behavior while launching Pi idle (no kickoff prompt, including no pull-request instruction). Useful when you only want a named worktree workspace and will drive Pi yourself.
-- A fixed cmux layout: equal-width left/right columns, `nvim .` above a fresh terminal in a 70/30 left-column split, and Pi in the right column.
+- `--no-prompt` to keep the naming/layout behavior while opening Pi idle (no kickoff prompt, including no pull-request instruction). Useful when you only want a named worktree and will drive Pi yourself.
+- Inside cmux, the existing fixed layout: equal-width left/right columns, `nvim .` above a fresh terminal in a 70/30 left-column split, and Pi in the right column.
+- Outside cmux (for example, over a normal SSH connection), the same branch/worktree creation without trying to spawn cmux. The extension stores a one-shot handoff in the worktree's private Git metadata; the next `pi` started anywhere in that worktree restores its name/metadata and submits the kickoff prompt automatically.
 
 Examples:
 
@@ -57,8 +58,7 @@ Examples:
 ### Dependencies
 
 - Git with worktree support
-- [cmux](https://cmux.com) with `new-workspace --layout` support
 - Pi
-- Neovim (`nvim`)
+- Optional: [cmux](https://cmux.com) with `new-workspace --layout` support and Neovim (`nvim`) for automatic workspace spawning
 
 The task-name generation uses the active Pi model when credentials are available and falls back to deterministic local naming otherwise.

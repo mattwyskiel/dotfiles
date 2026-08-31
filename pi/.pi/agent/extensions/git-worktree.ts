@@ -4,7 +4,7 @@ import { execFile as execFileCallback, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { chmod, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 
 const execFile = promisify(execFileCallback);
@@ -62,11 +62,11 @@ type ConversationContext = {
 };
 
 /**
- * One-file handoff from the creating Pi process to the Pi process launched in
- * the worktree. When `prompt` is set, the file is also passed as Pi's sole
- * positional CLI argument (`@config`) so the task starts without shell-quoting
- * the prompt or metadata. When `prompt` is omitted, Pi still loads the config
- * via `PI_WORKTREE_CONFIG` for session naming/metadata but stays idle.
+ * One-file handoff from the creating Pi process to the Pi process opened in the
+ * worktree. cmux launches pass the file through `PI_WORKTREE_CONFIG` and, when
+ * prompted, as Pi's sole positional CLI argument (`@config`). Manual launches
+ * discover a one-shot copy in the worktree's private Git directory, restore its
+ * metadata, and submit its prompt from `session_start`.
  */
 type WorktreeLaunchConfig = {
 	version: 1;
@@ -80,6 +80,8 @@ type WorktreeListEntry = {
 	worktree: string;
 	branch?: string;
 };
+
+const PENDING_LAUNCH_CONFIG_NAME = "pi-worktree-launch.json";
 
 async function run(command: string, args: string[], cwd?: string): Promise<ExecResult> {
 	return execFile(command, args, { cwd, maxBuffer: 1024 * 1024 });
@@ -359,12 +361,12 @@ function kickoffPrompt(
 	return lines.join("\n");
 }
 
-async function createLaunchConfig(
+async function writeLaunchConfig(
+	configPath: string,
 	metadata: WorktreeMetadata,
 	prompt?: string,
 	sourceSession?: string,
-): Promise<string> {
-	const configPath = join(tmpdir(), `pi-worktree-${process.pid}-${Date.now()}.json`);
+): Promise<void> {
 	const config: WorktreeLaunchConfig = {
 		version: 1,
 		sessionName: metadata.title ?? metadata.task ?? metadata.branch,
@@ -373,7 +375,30 @@ async function createLaunchConfig(
 		metadata,
 	};
 
+	await mkdir(dirname(configPath), { recursive: true });
 	await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 });
+	await chmod(configPath, 0o600);
+}
+
+async function createLaunchConfig(
+	metadata: WorktreeMetadata,
+	prompt?: string,
+	sourceSession?: string,
+): Promise<string> {
+	const configPath = join(tmpdir(), `pi-worktree-${process.pid}-${Date.now()}.json`);
+	await writeLaunchConfig(configPath, metadata, prompt, sourceSession);
+	return configPath;
+}
+
+async function pendingLaunchConfigPath(cwd: string): Promise<string> {
+	const worktreeRoot = await git(["rev-parse", "--show-toplevel"], cwd);
+	const gitPath = await git(["rev-parse", "--git-path", PENDING_LAUNCH_CONFIG_NAME], worktreeRoot);
+	return resolve(worktreeRoot, gitPath);
+}
+
+async function createPendingLaunchConfig(metadata: WorktreeMetadata, prompt?: string): Promise<string> {
+	const configPath = await pendingLaunchConfigPath(metadata.worktreePath);
+	await writeLaunchConfig(configPath, metadata, prompt);
 	return configPath;
 }
 
@@ -433,6 +458,10 @@ function piCommand(metadata: WorktreeMetadata, configPath: string, sourceSession
 	const promptArgument = prompt ? ` ${shellQuote(`@${configPath}`)}` : "";
 	const forkArgument = sourceSession ? ` --fork ${shellQuote(sourceSession)}` : "";
 	return `cd ${shellQuote(metadata.worktreePath)} && PI_WORKTREE_CONFIG=${shellQuote(configPath)} pi${forkArgument}${promptArgument}`;
+}
+
+function isCmuxEnvironment(): boolean {
+	return Boolean(process.env.CMUX_WORKSPACE_ID || process.env.CMUX_SURFACE_ID);
 }
 
 async function currentCmuxWorkspace(): Promise<CurrentCmuxWorkspace> {
@@ -626,18 +655,37 @@ async function scheduleCleanup(metadata: WorktreeMetadata, deleteBranch: boolean
 export default function gitWorktreeExtension(pi: ExtensionAPI) {
 	let launchConfigPath: string | undefined;
 
-	pi.on("session_start", async (_event, ctx) => {
+	pi.on("session_start", async (event, ctx) => {
 		launchConfigPath = process.env.PI_WORKTREE_CONFIG;
 		let metadata = metadataFromEnv();
+		let kickoff: string | undefined;
+		let configPath = launchConfigPath;
+		let consumeConfig = false;
 
-		if (launchConfigPath && existsSync(launchConfigPath)) {
+		if (!configPath && event.reason === "startup") {
 			try {
-				const config = await loadLaunchConfig(launchConfigPath);
+				const candidate = await pendingLaunchConfigPath(ctx.cwd);
+				if (existsSync(candidate)) {
+					configPath = candidate;
+					consumeConfig = true;
+				}
+			} catch {
+				// Starting Pi outside a Git worktree is unrelated to this extension.
+			}
+		}
+
+		if (configPath && existsSync(configPath)) {
+			try {
+				const config = await loadLaunchConfig(configPath);
 				metadata = config.metadata;
 				if (pi.getSessionName() !== config.sessionName) pi.setSessionName(config.sessionName);
+				if (consumeConfig) {
+					await unlink(configPath);
+					kickoff = config.prompt;
+				}
 			} catch (error) {
 				const message = error instanceof Error ? error.message : String(error);
-				ctx.ui.notify(`Could not load worktree config ${launchConfigPath}: ${message}`, "error");
+				ctx.ui.notify(`Could not load worktree config ${configPath}: ${message}`, "error");
 			}
 		}
 
@@ -649,6 +697,7 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 		});
 
 		if (!alreadyPersisted) pi.appendEntry("git-worktree", metadata);
+		if (kickoff) pi.sendUserMessage(kickoff);
 	});
 
 	pi.on("session_shutdown", async () => {
@@ -686,14 +735,28 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 				task,
 				title: identity.title,
 			};
-			const sourceSession = await resolveForkableSourceSession(ctx.sessionManager.getSessionFile());
+			const inCmux = isCmuxEnvironment();
+			const sourceSession = inCmux
+				? await resolveForkableSourceSession(ctx.sessionManager.getSessionFile())
+				: undefined;
 			const prompt = noPrompt ? undefined : kickoffPrompt(task, conversation, sourceSession, !noPr);
 
 			ctx.ui.notify(`Creating ${identity.title} (${branch}) from ${baseRef}${noPrompt ? " without kickoff prompt" : ""}...`, "info");
 			await git(["worktree", "add", "-b", branch, worktreePath, baseRef], repoRoot);
 
-			const workspace = await openCmuxWorkspace(metadata, prompt, sourceSession);
-			ctx.ui.notify(`Opened ${workspace}: ${worktreePath}`, "info");
+			if (inCmux) {
+				const workspace = await openCmuxWorkspace(metadata, prompt, sourceSession);
+				ctx.ui.notify(`Opened ${workspace}: ${worktreePath}`, "info");
+			} else {
+				await createPendingLaunchConfig(metadata, prompt);
+				ctx.ui.notify([
+					`Created worktree: ${worktreePath}`,
+					`Open it with: cd ${shellQuote(worktreePath)} && pi`,
+					noPrompt
+						? "Pi will restore the worktree metadata and open idle."
+						: "Pi will restore the worktree context and start the kickoff prompt automatically.",
+				].join("\n"), "info");
+			}
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			ctx.ui.notify(`Worktree failed: ${message}`, "error");
@@ -772,7 +835,7 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 	}
 
 	pi.registerCommand("wt", {
-		description: "Continue a task in a conversation-aware git worktree and three-pane cmux workspace. The prompted agent opens a PR and watches for review comments by default; use --no-pr to disable that or --no-prompt to open idle Pi.",
+		description: "Continue a task in a conversation-aware git worktree. Opens a three-pane workspace in cmux; elsewhere, the next Pi launched in the worktree starts automatically. Use --no-pr to skip PR follow-up or --no-prompt to open idle Pi.",
 		handler,
 	});
 
