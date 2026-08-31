@@ -456,6 +456,10 @@ backend = "npm:dockerfile-language-server-nodejs"
 version = "1.1.413"
 backend = "npm:pyright"
 
+[[tools."npm:typescript"]]
+version = "7.0.2"
+backend = "npm:typescript"
+
 [[tools."npm:typescript-language-server"]]
 version = "5.3.0"
 backend = "npm:typescript-language-server"
