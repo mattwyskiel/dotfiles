@@ -11,35 +11,19 @@ const execFile = promisify(execFileCallback);
 
 type ExecResult = { stdout: string; stderr: string };
 
-type CmuxTree = {
-	caller?: { workspace_ref?: string };
-	windows?: Array<{
-		workspaces?: Array<{ ref: string }>;
-	}>;
+type HerdrWorktreeCreateResponse = {
+	result?: {
+		type?: string;
+		workspace?: { workspace_id?: string };
+		root_pane?: { pane_id?: string };
+		worktree?: { path?: string };
+	};
 };
 
-type CmuxSurface = {
-	type: "terminal" | "browser";
-	name?: string;
-	command?: string;
-	url?: string;
-	focus?: boolean;
-};
-
-type CmuxLayout =
-	| { pane: { surfaces: CmuxSurface[] } }
-	| { direction: "horizontal" | "vertical"; split: number; children: [CmuxLayout, CmuxLayout] };
-
-type CmuxWorkspaceGroupList = {
-	groups?: Array<{
-		ref: string;
-		member_workspace_refs?: string[];
-	}>;
-};
-
-type CurrentCmuxWorkspace = {
-	ref?: string;
-	groupRef?: string;
+type HerdrPaneSplitResponse = {
+	result?: {
+		pane?: { pane_id?: string };
+	};
 };
 
 type WorktreeMetadata = {
@@ -49,6 +33,7 @@ type WorktreeMetadata = {
 	baseRef: string;
 	task?: string;
 	title?: string;
+	herdrWorkspaceId?: string;
 };
 
 type TaskIdentity = {
@@ -63,8 +48,8 @@ type ConversationContext = {
 
 /**
  * One-file handoff from the creating Pi process to the Pi process opened in the
- * worktree. cmux launches pass the file through `PI_WORKTREE_CONFIG` and, when
- * prompted, as Pi's sole positional CLI argument (`@config`). Manual launches
+ * worktree. Herdr launches pass the file through `PI_WORKTREE_CONFIG` and,
+ * when prompted, as Pi's sole positional CLI argument (`@config`). Manual launches
  * discover a one-shot copy in the worktree's private Git directory, restore its
  * metadata, and submit its prompt from `session_start`.
  */
@@ -418,6 +403,9 @@ function parseLaunchConfig(value: unknown): WorktreeLaunchConfig {
 	}
 	if (metadata.task !== undefined && typeof metadata.task !== "string") throw new Error("metadata.task must be a string");
 	if (metadata.title !== undefined && typeof metadata.title !== "string") throw new Error("metadata.title must be a string");
+	if (metadata.herdrWorkspaceId !== undefined && typeof metadata.herdrWorkspaceId !== "string") {
+		throw new Error("metadata.herdrWorkspaceId must be a string");
+	}
 	if (config.sourceSession !== undefined && typeof config.sourceSession !== "string") throw new Error("sourceSession must be a string");
 
 	return config as WorktreeLaunchConfig;
@@ -460,90 +448,91 @@ function piCommand(metadata: WorktreeMetadata, configPath: string, sourceSession
 	return `cd ${shellQuote(metadata.worktreePath)} && PI_WORKTREE_CONFIG=${shellQuote(configPath)} pi${forkArgument}${promptArgument}`;
 }
 
-function isCmuxEnvironment(): boolean {
-	return Boolean(process.env.CMUX_WORKSPACE_ID || process.env.CMUX_SURFACE_ID);
+function isHerdrEnvironment(): boolean {
+	return process.env.HERDR_ENV === "1" && Boolean(process.env.HERDR_WORKSPACE_ID);
 }
 
-async function currentCmuxWorkspace(): Promise<CurrentCmuxWorkspace> {
-	const { stdout } = await run("cmux", ["--json", "tree"]);
-	const tree = JSON.parse(stdout) as CmuxTree;
-	const callerWorkspace = tree.caller?.workspace_ref;
-	const workspace = tree.windows
-		?.flatMap((window) => window.workspaces ?? [])
-		.find((candidate) => candidate.ref === callerWorkspace)
-		?? tree.windows?.[0]?.workspaces?.[0];
-	const workspaceRef = callerWorkspace ?? workspace?.ref;
-	let groupRef: string | undefined;
-	if (workspaceRef) {
-		const { stdout: groupsStdout } = await run("cmux", ["workspace-group", "list", "--json"]);
-		const groupList = JSON.parse(groupsStdout) as CmuxWorkspaceGroupList;
-		groupRef = groupList.groups?.find((group) => group.member_workspace_refs?.includes(workspaceRef))?.ref;
+function parseHerdrResponse<T>(stdout: string, command: string): T {
+	try {
+		return JSON.parse(stdout) as T;
+	} catch {
+		throw new Error(`${command} returned invalid JSON: ${stdout.trim() || "<empty>"}`);
+	}
+}
+
+async function openHerdrWorkspace(
+	metadata: WorktreeMetadata,
+	prompt?: string,
+	sourceSession?: string,
+): Promise<WorktreeMetadata> {
+	const sourceWorkspaceId = process.env.HERDR_WORKSPACE_ID;
+	if (!sourceWorkspaceId) throw new Error("HERDR_WORKSPACE_ID is unavailable");
+
+	const { stdout: createStdout } = await run("herdr", [
+		"worktree",
+		"create",
+		"--workspace",
+		sourceWorkspaceId,
+		"--branch",
+		metadata.branch,
+		"--base",
+		metadata.baseRef,
+		"--path",
+		metadata.worktreePath,
+		"--label",
+		metadata.title ?? metadata.task ?? metadata.branch,
+		"--no-focus",
+	]);
+	const created = parseHerdrResponse<HerdrWorktreeCreateResponse>(createStdout, "herdr worktree create");
+	const workspaceId = created.result?.workspace?.workspace_id;
+	const editorPaneId = created.result?.root_pane?.pane_id;
+	if (!workspaceId || !editorPaneId) {
+		throw new Error("herdr worktree create did not return workspace and root pane IDs");
 	}
 
-	return { ref: workspaceRef, groupRef };
-}
-
-/**
- * Build the fixed worktree workspace: equal-width editor/shell and Pi columns,
- * with the editor occupying 70% of the left column.
- */
-function buildLayout(metadata: WorktreeMetadata, configPath: string, sourceSession?: string, prompt?: string): CmuxLayout {
-	return {
-		direction: "horizontal",
-		split: 0.5,
-		children: [
-			{
-				direction: "vertical",
-				split: 0.7,
-				children: [
-					{ pane: { surfaces: [{ type: "terminal", name: "Editor", command: "nvim ." }] } },
-					{ pane: { surfaces: [{ type: "terminal", name: "Terminal" }] } },
-				],
-			},
-			{
-				pane: {
-					surfaces: [{
-						type: "terminal",
-						name: "Pi",
-						command: piCommand(metadata, configPath, sourceSession, prompt),
-						focus: true,
-					}],
-				},
-			},
-		],
-	};
-}
-
-async function openCmuxWorkspace(metadata: WorktreeMetadata, prompt?: string, sourceSession?: string): Promise<string> {
-	const configPath = await createLaunchConfig(metadata, prompt, sourceSession);
+	const herdrMetadata = { ...metadata, herdrWorkspaceId: workspaceId };
+	const configPath = await createLaunchConfig(herdrMetadata, prompt, sourceSession);
 	try {
-		const currentWorkspace = await currentCmuxWorkspace();
-		const layout = buildLayout(metadata, configPath, sourceSession, prompt);
-		const args = [
-			"new-workspace",
-			"--name",
-			metadata.title ?? metadata.task ?? metadata.branch,
+		// Herdr's native worktree command groups this workspace with its source.
+		// Build the familiar 70/30 editor-shell column beside a same-width Pi pane.
+		const { stdout: piSplitStdout } = await run("herdr", [
+			"pane",
+			"split",
+			editorPaneId,
+			"--direction",
+			"right",
+			"--ratio",
+			"0.5",
 			"--cwd",
-			metadata.worktreePath,
-			"--layout",
-			JSON.stringify(layout),
+			herdrMetadata.worktreePath,
 			"--focus",
-			"true",
-		];
+		]);
+		const piSplit = parseHerdrResponse<HerdrPaneSplitResponse>(piSplitStdout, "herdr pane split");
+		const piPaneId = piSplit.result?.pane?.pane_id;
+		if (!piPaneId) throw new Error("herdr pane split did not return the Pi pane ID");
 
-		if (currentWorkspace.groupRef && currentWorkspace.ref) {
-			args.push(
-				"--group",
-				currentWorkspace.groupRef,
-				"--group-placement",
-				"afterCurrent",
-				"--group-reference",
-				currentWorkspace.ref,
-			);
-		}
+		const { stdout: shellSplitStdout } = await run("herdr", [
+			"pane",
+			"split",
+			editorPaneId,
+			"--direction",
+			"down",
+			"--ratio",
+			"0.7",
+			"--cwd",
+			herdrMetadata.worktreePath,
+			"--no-focus",
+		]);
+		const shellSplit = parseHerdrResponse<HerdrPaneSplitResponse>(shellSplitStdout, "herdr pane split");
+		const shellPaneId = shellSplit.result?.pane?.pane_id;
+		if (!shellPaneId) throw new Error("herdr pane split did not return the shell pane ID");
 
-		const { stdout } = await run("cmux", args);
-		return stdout.trim() || `workspace for ${metadata.worktreePath}`;
+		await run("herdr", ["pane", "rename", editorPaneId, "Editor"]);
+		await run("herdr", ["pane", "rename", shellPaneId, "Terminal"]);
+		await run("herdr", ["pane", "rename", piPaneId, "Pi"]);
+		await run("herdr", ["pane", "run", editorPaneId, "nvim ."]);
+		await run("herdr", ["pane", "run", piPaneId, piCommand(herdrMetadata, configPath, sourceSession, prompt)]);
+		return herdrMetadata;
 	} catch (error) {
 		await unlink(configPath).catch(() => undefined);
 		throw error;
@@ -635,11 +624,19 @@ function parseDoneArgs(args: string): { force: boolean; keepBranch: boolean; del
 async function scheduleCleanup(metadata: WorktreeMetadata, deleteBranch: boolean, force: boolean): Promise<string> {
 	const scriptPath = join(tmpdir(), `pi-worktree-cleanup-${process.pid}-${Date.now()}.sh`);
 	const branchDeleteFlag = force ? "-D" : "-d";
+	const removeWithGit = `git -C ${shellQuote(metadata.repoRoot)} worktree remove ${force ? "--force " : ""}${shellQuote(metadata.worktreePath)}`;
+	const removeWorktree = metadata.herdrWorkspaceId
+		? [
+			`if ! herdr worktree remove --workspace ${shellQuote(metadata.herdrWorkspaceId)}${force ? " --force" : ""}; then`,
+			`  [[ ! -e ${shellQuote(metadata.worktreePath)} ]] || ${removeWithGit}`,
+			"fi",
+		].join("\n")
+		: removeWithGit;
 	const script = [
 		"#!/usr/bin/env bash",
 		"set -euo pipefail",
 		`while kill -0 ${process.pid} 2>/dev/null; do sleep 0.2; done`,
-		`git -C ${shellQuote(metadata.repoRoot)} worktree remove ${force ? "--force " : ""}${shellQuote(metadata.worktreePath)}`,
+		removeWorktree,
 		deleteBranch ? `git -C ${shellQuote(metadata.repoRoot)} branch ${branchDeleteFlag} ${shellQuote(metadata.branch)}` : "true",
 		`git -C ${shellQuote(metadata.repoRoot)} worktree prune`,
 	].join("\n");
@@ -735,19 +732,18 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 				task,
 				title: identity.title,
 			};
-			const inCmux = isCmuxEnvironment();
-			const sourceSession = inCmux
+			const inHerdr = isHerdrEnvironment();
+			const sourceSession = inHerdr
 				? await resolveForkableSourceSession(ctx.sessionManager.getSessionFile())
 				: undefined;
 			const prompt = noPrompt ? undefined : kickoffPrompt(task, conversation, sourceSession, !noPr);
 
 			ctx.ui.notify(`Creating ${identity.title} (${branch}) from ${baseRef}${noPrompt ? " without kickoff prompt" : ""}...`, "info");
-			await git(["worktree", "add", "-b", branch, worktreePath, baseRef], repoRoot);
-
-			if (inCmux) {
-				const workspace = await openCmuxWorkspace(metadata, prompt, sourceSession);
-				ctx.ui.notify(`Opened ${workspace}: ${worktreePath}`, "info");
+			if (inHerdr) {
+				const opened = await openHerdrWorkspace(metadata, prompt, sourceSession);
+				ctx.ui.notify(`Opened Herdr workspace ${opened.herdrWorkspaceId}: ${worktreePath}`, "info");
 			} else {
+				await git(["worktree", "add", "-b", branch, worktreePath, baseRef], repoRoot);
 				await createPendingLaunchConfig(metadata, prompt);
 				ctx.ui.notify([
 					`Created worktree: ${worktreePath}`,
@@ -776,6 +772,7 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 			const dirty = status.length > 0;
 			const merged = await isBranchMerged(metadata.repoRoot, metadata.branch, metadata.baseRef);
 			const looksLikeTaskWorktree = metadataFromEnv()?.worktreePath === metadata.worktreePath
+				|| metadata.herdrWorkspaceId === process.env.HERDR_WORKSPACE_ID
 				|| metadata.worktreePath.includes(`${basename(metadata.repoRoot)}-worktrees`);
 
 			if (!looksLikeTaskWorktree && !flags.force) {
@@ -835,7 +832,7 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 	}
 
 	pi.registerCommand("wt", {
-		description: "Continue a task in a conversation-aware git worktree. Opens a three-pane workspace in cmux; elsewhere, the next Pi launched in the worktree starts automatically. Use --no-pr to skip PR follow-up or --no-prompt to open idle Pi.",
+		description: "Continue a task in a conversation-aware git worktree. Opens a grouped three-pane Herdr workspace; elsewhere, the next Pi launched in the worktree starts automatically. Use --no-pr to skip PR follow-up or --no-prompt to open idle Pi.",
 		handler,
 	});
 
