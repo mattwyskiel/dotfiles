@@ -17,6 +17,7 @@ The goal here is to be as machine-agnostic as possible, so that I can have a sea
 - `zsh/`: Contains my `.zshrc` configuration
 - `git/`: Contains my `.gitconfig`
 - `nvim/`: Contains my Neovim configuration. LSP clients use Neovim's native `vim.lsp` API; their executables are supplied by mise.
+- `herdr/`: Contains cmux-style Herdr configuration.
 - `tmux/`: Contains my Tmux configuration
 - `alacritty/`: Contains my Alacritty configuration (terminal emulator)
 
@@ -50,6 +51,33 @@ LSP editor settings live separately in `nvim/.config/nvim/lua/mattwyskiel/plugin
 - `refresh` - Alias for `$HOME/dotfiles/scripts/update-dotfiles.sh` (pull latest changes)
 - `vopen [directory] [session_name]` - Creates/attaches to tmux session with Neovim and Claude Code
 - `awscheck [-p profile] [--quiet]` - Checks and manages AWS SSO authentication
+
+## Herdr with cmux Shortcuts
+
+Run `herdr` (or `herdr --session NAME`). The Ghostty config clears its terminal keybindings so chords are forwarded directly to Herdr, which owns the cmux-style shortcuts in `herdr/.config/herdr/config.toml`. Ghostty retains standard **Cmd+A**/**Cmd+C**/**Cmd+V** selection and clipboard behavior; Cmd+C continues through to Herdr when Ghostty has no selection.
+
+| Action | Shortcut |
+| --- | --- |
+| Focus pane left/down/up/right | Ctrl+Cmd+H/J/K/L |
+| Split down/right | Ctrl+Shift+J/L |
+| Resize left/down/up/right | Ctrl+Cmd+Shift+H/J/K/L |
+| Zoom pane | Cmd+Shift+Enter |
+| Close pane | Cmd+W |
+| New workspace / tab | Cmd+N / Cmd+T |
+| Previous/next workspace | Ctrl+Cmd+[ / ] |
+| Previous/next tab | Cmd+Shift+[ / ] |
+| Workspace / tab by number | Cmd+1–9 / Ctrl+1–9 |
+| Rename workspace / tab | Cmd+Shift+R / Cmd+R |
+| Close workspace | Cmd+Shift+W |
+| Workspace picker | Cmd+P |
+| Toggle sidebar | Cmd+B |
+| Settings / reload Herdr config | Cmd+, / Cmd+Shift+, |
+| Jump to notification target | Cmd+Shift+U |
+| Copy mode | Cmd+Shift+M |
+
+Herdr's **Ctrl+B** prefix still provides unmodified defaults such as **Ctrl+B, ?** for help. Herdr tabs contain whole split layouts, unlike cmux's pane-local tabs. Ctrl+Shift+H/K have no split-left/up equivalent.
+
+Apply Herdr changes with `herdr config check && herdr server reload-config`.
 
 ## Architecture
 This repository uses **GNU Stow** for symlink management, organizing configurations by application. Each directory mirrors the target home directory structure. See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation, common modification patterns, and development guidelines including preferred project scaffolding tools.

@@ -10,22 +10,11 @@ maximize = true
 
 theme = Apple System Colors
 
-# tmux-style keybindings
-# -- new split
-keybind = ctrl+shift+h=new_split:left
-keybind = ctrl+shift+j=new_split:down
-keybind = ctrl+shift+k=new_split:up
-keybind = ctrl+shift+l=new_split:right
-
-# -- go-to split
-keybind = ctrl+super+j=goto_split:down
-keybind = ctrl+super+k=goto_split:up
-keybind = ctrl+super+h=goto_split:left
-keybind = ctrl+super+l=goto_split:right
-
-# -- resize split
-keybind = ctrl+shift+super+h=resize_split:left,10
-keybind = ctrl+shift+super+j=resize_split:down,10
-keybind = ctrl+shift+super+k=resize_split:up,10
-keybind = ctrl+shift+super+l=resize_split:right,10
-keybind = shift+enter=text:\n
+# Herdr owns terminal keybindings. Clear Ghostty's defaults so its shortcuts
+# are forwarded to Herdr, while retaining standard selection and clipboard
+# behavior. Copy is forwarded when Ghostty has no selection, allowing Herdr's
+# copy mode to work.
+keybind = clear
+keybind = super+a=select_all
+keybind = performable:super+c=copy_to_clipboard:mixed
+keybind = super+v=paste_from_clipboard

@@ -1,0 +1,56 @@
+onboarding = false
+# cmux-style shortcuts, including the custom bindings saved in cmux Settings.
+# Ghostty clears its own keybindings so these chords are forwarded to Herdr.
+
+[theme]
+name = "terminal"
+
+auto_switch = false
+[terminal]
+new_cwd = "follow"
+
+[keys]
+prefix = "ctrl+b"
+focus_pane_left = "ctrl+cmd+h"
+focus_pane_down = "ctrl+cmd+j"
+focus_pane_up = "ctrl+cmd+k"
+focus_pane_right = "ctrl+cmd+l"
+split_vertical = "ctrl+shift+l"
+split_horizontal = "ctrl+shift+j"
+zoom = "cmd+shift+enter"
+close_pane = "cmd+w"
+copy_mode = "cmd+shift+m"
+
+resize_pane_left = "ctrl+shift+cmd+h"
+resize_pane_down = "ctrl+shift+cmd+j"
+resize_pane_up = "ctrl+shift+cmd+k"
+resize_pane_right = "ctrl+shift+cmd+l"
+
+new_workspace = "cmd+n"
+rename_workspace = "cmd+shift+r"
+close_workspace = "cmd+shift+w"
+previous_workspace = "cmd+ctrl+["
+next_workspace = "cmd+ctrl+]"
+switch_workspace = "cmd+1..9"
+workspace_picker = "cmd+p"
+
+# cmux surface tabs are pane-local; Herdr tabs contain a whole pane layout.
+new_tab = "cmd+t"
+rename_tab = "cmd+r"
+previous_tab = "cmd+shift+["
+next_tab = "cmd+shift+]"
+switch_tab = "ctrl+1..9"
+
+toggle_sidebar = "cmd+b"
+settings = "cmd+comma"
+reload_config = "cmd+shift+comma"
+open_notification_target = "cmd+shift+u"
+
+[ui]
+agent_panel_sort = "spaces"
+prompt_new_tab_name = false
+confirm_close = true
+copy_on_select = false
+pane_outer_borders = false
+pane_gaps = false
+sidebar_collapsed_mode = "hidden"
