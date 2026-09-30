@@ -22,6 +22,15 @@ Reload a running Pi session after editing an extension:
 /reload
 ```
 
+## Native model selection
+
+Model-only presets use Pi's native `enabledModels` setting in `../settings.json` rather than an extension or `presets.json` file.
+
+- `Ctrl+P` / `Ctrl+Shift+P` cycle through the configured shortlist, with `high` thinking selected by each model's `:high` suffix.
+- `/scoped-models` manages the shortlist.
+- `/model` starts with the shortlist; press `Tab` to switch to all models from configured providers. Selecting a model outside the shortlist does not add it unless it is saved as the default.
+- `pi --model provider/model:high` selects a model at startup.
+
 ## Codex usage extension
 
 `codex-usage.ts` displays the remaining OpenAI Codex subscription windows in Pi's footer. It refreshes when a session starts, after each completed agent run, and on demand:

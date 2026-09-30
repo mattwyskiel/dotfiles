@@ -3,6 +3,11 @@
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "high",
+  "enabledModels": [
+    "openai-codex/gpt-6.1-sol:high",
+    "xai/grok-4.5:high",
+    "opencode-go/kimi-k3:high"
+  ],
   "theme": "dark",
   "externalEditor": "nvim",
   "packages": []
