@@ -3,6 +3,9 @@
 ## Taking action
 - **Never assume - always verify documentation**
 
+## Tracking changes
+- Eagerly commit changes made by both myself and you. For big diffs, use your judgment on splitting.
+
 ## Code Generation
 ALWAYS PREFER official generators for scaffolding:
 - Pulumi, CDK, SST, Next.js, Bun, NPM
