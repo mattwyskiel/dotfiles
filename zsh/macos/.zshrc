@@ -68,3 +68,4 @@ export PATH="/opt/homebrew/opt/curl/bin:$PATH"
 if command -v mise >/dev/null 2>&1; then
   eval "$(mise activate zsh)"
 fi
+export PATH="/opt/homebrew/opt/bison/bin:$PATH"
