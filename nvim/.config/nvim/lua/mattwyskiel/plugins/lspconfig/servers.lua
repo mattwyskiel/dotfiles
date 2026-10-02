@@ -10,7 +10,26 @@
 local servers = {
   gopls = {},
   pyright = {},
-  ts_ls = {},
+  tsgo = {
+    -- TypeScript 7 ships its own LSP as `tsc --lsp`; ts_ls requires the removed tsserver.js.
+    -- Keep nvim-lspconfig's monorepo/Deno detection, but replace its preview-only `tsgo` command.
+    cmd = function(dispatchers, config)
+      local cmd = 'tsc'
+      if config.root_dir then
+        local package_dir = vim.fs.joinpath(config.root_dir, 'node_modules', 'typescript')
+        local ok, package = pcall(function()
+          return vim.json.decode(table.concat(vim.fn.readfile(vim.fs.joinpath(package_dir, 'package.json')), '\n'))
+        end)
+        local major = ok and tonumber((package.version or ''):match '^%d+')
+        local local_cmd = vim.fs.joinpath(package_dir, 'bin', 'tsc')
+        -- Older workspace compilers do not implement --lsp; use mise's native compiler instead.
+        if major and major >= 7 and vim.fn.executable(local_cmd) == 1 then
+          cmd = local_cmd
+        end
+      end
+      return vim.lsp.rpc.start({ cmd, '--lsp', '--stdio' }, dispatchers, { cwd = config.root_dir })
+    end,
+  },
   eslint = {},
   biome = {},
   cssls = {},

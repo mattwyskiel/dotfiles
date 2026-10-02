@@ -46,6 +46,8 @@ mise lock --global --platform macos-arm64,macos-x64,linux-arm64,linux-x64
 
 LSP editor settings live separately in `nvim/.config/nvim/lua/mattwyskiel/plugins/lspconfig/servers.lua` and use Neovim's native `vim.lsp.config()` API.
 
+JavaScript/TypeScript uses TypeScript 7's built-in LSP (`tsc --lsp --stdio`) through the `tsgo` configuration. It prefers a workspace's TypeScript 7+ compiler, falling back to mise's pinned compiler for older projects or standalone files. Do not enable `ts_ls` alongside it: `typescript-language-server` requires `tsserver.js`, which TypeScript 7 no longer ships. After changing the setup, restart Neovim and check `:checkhealth vim.lsp` for an attached `tsgo` client.
+
 ## Key Commands After Setup
 - `init` - Alias for `$HOME/dotfiles/init.sh` (re-run full setup)
 - `refresh` - Alias for `$HOME/dotfiles/scripts/update-dotfiles.sh` (pull latest changes)
