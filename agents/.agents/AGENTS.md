@@ -12,10 +12,6 @@ ALWAYS PREFER official generators for scaffolding:
     - e.g. if it has a `bun create` (or similar tool for other platforms), use that
 - Generate first, then customize
 
-## AWS
-- use `aws sso login`
-- do NOT use AWS MCP
-
 ## Web Search
 - use `browse`
 
