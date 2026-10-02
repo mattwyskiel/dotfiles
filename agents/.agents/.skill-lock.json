@@ -42,18 +42,18 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/shadcn/ui.git",
       "skillPath": "skills/shadcn/SKILL.md",
-      "skillFolderHash": "0a31c3c2535a62b22bf23a1b10a142178a6b7dbf",
+      "skillFolderHash": "b5791523e07794a4deb201e78eab3f3adbd022c0",
       "installedAt": "2026-04-21T18:57:43.460Z",
-      "updatedAt": "2026-07-30T16:59:26.146Z"
+      "updatedAt": "2026-10-02T02:26:59.669Z"
     },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/anthropics/skills.git",
       "skillPath": "skills/frontend-design/SKILL.md",
-      "skillFolderHash": "0d5b74a14bdf3ebcd64f352d06376a2ef05ed296",
+      "skillFolderHash": "d79e2a5bb4df4a386c2adcdd9ab8709bba28c3f6",
       "installedAt": "2026-04-21T19:07:58.864Z",
-      "updatedAt": "2026-06-13T17:51:10.852Z"
+      "updatedAt": "2026-10-02T02:27:00.646Z"
     },
     "mcp-builder": {
       "source": "anthropics/skills",
@@ -70,9 +70,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/vercel/turborepo.git",
       "skillPath": "skills/turborepo/SKILL.md",
-      "skillFolderHash": "34eaa69f05167f1e1a809c131547a80b83bf8208",
+      "skillFolderHash": "a1bae26a81bbc79e6eb14b4e7ec4d36694e6e94a",
       "installedAt": "2026-04-25T14:55:28.092Z",
-      "updatedAt": "2026-08-30T19:22:14.068Z"
+      "updatedAt": "2026-10-02T02:27:01.521Z"
     },
     "pulumi-best-practices": {
       "source": "pulumi/agent-skills",
@@ -133,18 +133,18 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/google/skills.git",
       "skillPath": "skills/cloud/gcloud/SKILL.md",
-      "skillFolderHash": "faaeadea169886088811f78c600c131be7f1ebf5",
+      "skillFolderHash": "e79ad07a482cd3a10e63d1225b6166a8a5a674ca",
       "installedAt": "2026-06-16T14:05:55.572Z",
-      "updatedAt": "2026-08-30T19:22:15.612Z"
+      "updatedAt": "2026-10-02T02:27:02.655Z"
     },
     "google-cloud-recipe-auth": {
       "source": "google/skills",
       "sourceType": "github",
       "sourceUrl": "https://github.com/google/skills.git",
       "skillPath": "skills/cloud/google-cloud-recipe-auth/SKILL.md",
-      "skillFolderHash": "a42449bc4dc3d411321e9aa63b8ea12c1e5eaa89",
+      "skillFolderHash": "377e20398ff37189e0c8779b034114d68c74351a",
       "installedAt": "2026-06-16T14:05:55.574Z",
-      "updatedAt": "2026-06-28T20:00:20.763Z"
+      "updatedAt": "2026-10-02T02:27:03.803Z"
     },
     "vercel-react-view-transitions": {
       "source": "vercel-labs/agent-skills",
@@ -179,18 +179,18 @@
       "sourceUrl": "https://github.com/vercel/next.js.git",
       "ref": "canary",
       "skillPath": "skills/next-dev-loop/SKILL.md",
-      "skillFolderHash": "8ca0a996b9b38a667772df4623dc07261863fe23",
+      "skillFolderHash": "60d23e960e791d8ca6cbad3710abfb5bfe836ab9",
       "installedAt": "2026-08-05T20:02:47.842Z",
-      "updatedAt": "2026-08-20T14:18:22.070Z"
+      "updatedAt": "2026-10-02T02:27:12.683Z"
     },
     "herdr": {
       "source": "herdrdev/herdr",
       "sourceType": "github",
       "sourceUrl": "https://github.com/herdrdev/herdr.git",
       "skillPath": "skills/herdr/SKILL.md",
-      "skillFolderHash": "f8bb649bb92ddc99e6af463ab9a635da98c7b129",
+      "skillFolderHash": "67042ed7910d4177a9000e0679e78b0346060927",
       "installedAt": "2026-09-02T01:39:50.597Z",
-      "updatedAt": "2026-09-02T01:39:50.597Z"
+      "updatedAt": "2026-10-02T02:27:17.368Z"
     },
     "browser": {
       "source": "browserbase/skills",
