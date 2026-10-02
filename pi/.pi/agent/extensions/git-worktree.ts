@@ -77,6 +77,43 @@ async function git(args: string[], cwd: string): Promise<string> {
 	return stdout.trim();
 }
 
+/** Resolve linked issues before any naming or handoff, including --no-prompt. */
+async function fetchGitHubIssueContext(
+	task: string,
+	ctx: ExtensionCommandContext,
+): Promise<{ context: string; fallbackTask: string }> {
+	const urls = [...new Set(
+		[...task.matchAll(/https?:\/\/github\.com\/([A-Za-z0-9-]+)\/([A-Za-z0-9_.-]+)\/issues\/([1-9][0-9]*)(?=$|[\s/?#)\]}>.,:;!"'])/gi)]
+			.map((match) => `https://github.com/${match[1]}/${match[2]}/issues/${match[3]}`),
+	)];
+	const contexts: string[] = [];
+	const titles: string[] = [];
+
+	for (const url of urls) {
+		ctx.ui.notify(`Fetching GitHub issue: ${url}...`, "info");
+		try {
+			const { stdout } = await execFile("gh", [
+				"issue", "view", url,
+				"--json", "number,title,body,state,url,labels,comments",
+			], { cwd: ctx.cwd, timeout: 30_000, maxBuffer: 1024 * 1024 });
+			const issue = JSON.parse(stdout) as { title?: unknown } | null;
+			if (!issue || typeof issue.title !== "string" || !issue.title.trim()) {
+				throw new Error("gh issue view returned an issue without a title");
+			}
+			titles.push(issue.title);
+			contexts.push(`GitHub issue fetched from ${url}:\n${JSON.stringify(issue, null, 2)}`);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			throw new Error(`Could not fetch ${url}. Ensure GitHub CLI (gh) is installed and authenticated with access to the issue. ${message}`);
+		}
+	}
+
+	return {
+		context: contexts.join("\n\n"),
+		fallbackTask: titles.length ? titles.join("; ") : task,
+	};
+}
+
 function shellQuote(value: string): string {
 	return `'${value.replaceAll("'", `'"'"'`)}'`;
 }
@@ -716,12 +753,14 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 			const repoRoot = await git(["rev-parse", "--show-toplevel"], ctx.cwd);
 			const currentBranch = await git(["branch", "--show-current"], repoRoot);
 			const baseRef = (base ?? currentBranch) || "HEAD";
+			const issue = await fetchGitHubIssueContext(taskSeed, ctx);
 			const identityContext = [
 				conversation.transcript && `Preceding conversation:\n${conversation.transcript}`,
 				explicitTask && `Explicit /wt task:\n${explicitTask}`,
+				issue.context,
 			].filter(Boolean).join("\n\n") || taskSeed;
-			const identity = await summarizeTaskIdentity(identityContext, taskSeed, ctx);
-			const task = explicitTask || identity.title;
+			const identity = await summarizeTaskIdentity(identityContext, issue.fallbackTask, ctx);
+			const task = [explicitTask || identity.title, issue.context].filter(Boolean).join("\n\n");
 			const worktreePath = await uniqueWorktreePath(repoRoot, identity.slug);
 			const branch = await uniqueBranchName(repoRoot, identity.slug);
 			const metadata: WorktreeMetadata = {
@@ -832,7 +871,7 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 	}
 
 	pi.registerCommand("wt", {
-		description: "Continue a task in a conversation-aware git worktree. Opens a grouped three-pane Herdr workspace; elsewhere, the next Pi launched in the worktree starts automatically. Use --no-pr to skip PR follow-up or --no-prompt to open idle Pi.",
+		description: "Continue a task in a conversation-aware git worktree. Fetches linked GitHub issues before naming and kickoff. Opens a grouped three-pane Herdr workspace; elsewhere, the next Pi launched in the worktree starts automatically. Use --no-pr to skip PR follow-up or --no-prompt to open idle Pi.",
 		handler,
 	});
 

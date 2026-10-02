@@ -48,6 +48,7 @@ The command also shows reset times and any additional model-specific limits repo
 - `/wt [--base <ref>] [--no-prompt] [--no-pr] [task]` (alias: `/worktree`) to create a task branch and worktree.
 - `/wtdone` (alias: `/worktree-done`) to safely remove a task worktree.
 - Conversation-aware task inference. `/wt` can omit `task` when the preceding conversation establishes it. Herdr launches fork persisted sessions so the full context is retained; manual launches include the preceding conversation in their one-shot kickoff prompt.
+- GitHub issue links in the explicit or inferred task are fetched **before** naming and kickoff generation. The issue title, description, state, labels, and comments are passed to naming and preserved in the worktree handoff, including forked Herdr sessions. Local fallback names use the fetched title rather than the URL. Repeated links are fetched once; `--no-prompt` still fetches for naming. Fetch failures stop creation instead of proceeding with missing issue context.
 - A generated kebab-case `pi/...` branch and matching Human Title for the worktree's Pi session and, when available, its Herdr workspace.
 - A default kickoff instruction to commit and push completed changes, open a pull request, watch it for review comments, and address actionable feedback.
 - `--no-pr` to omit the pull-request and review-watching instruction while retaining the rest of the kickoff prompt.
@@ -60,6 +61,8 @@ Examples:
 
 ```text
 /wt fix auth cookie refresh
+/wt https://github.com/owner/repo/issues/123
+/wt --no-pr fix https://github.com/owner/repo/issues/123 (keep the public API unchanged)
 /wt --no-pr investigate flaky tests
 /wt --base main --no-prompt explore package upgrades
 /wt --no-prompt
@@ -69,6 +72,13 @@ Examples:
 
 - Git with worktree support
 - Pi
+- GitHub CLI (`gh`) installed and authenticated with access to any linked issues
 - Optional: [Herdr](https://herdr.dev) 0.8.2 or newer and Neovim (`nvim`) for grouped automatic workspace spawning
 
 The task-name generation uses the active Pi model when credentials are available and falls back to deterministic local naming otherwise.
+
+Run the worktree regression tests (Node.js 24+):
+
+```bash
+node --test pi/.pi/agent/extensions/tests/git-worktree.test.mjs
+```
