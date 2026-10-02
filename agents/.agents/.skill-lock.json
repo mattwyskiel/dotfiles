@@ -201,6 +201,51 @@
       "pluginName": "browse",
       "installedAt": "2026-10-02T02:24:10.571Z",
       "updatedAt": "2026-10-02T02:24:10.571Z"
+    },
+    "aws-storage": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/aws/agent-toolkit-for-aws.git",
+      "skillPath": "skills/core-skills/aws-storage/SKILL.md",
+      "skillFolderHash": "a6fe28a3b0387e38f42f377ee941f92a145ea955",
+      "installedAt": "2026-10-02T02:33:17.269Z",
+      "updatedAt": "2026-10-02T02:33:17.269Z"
+    },
+    "cloudfront": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/aws/agent-toolkit-for-aws.git",
+      "skillPath": "skills/specialized-skills/networking-and-content-delivery-skills/cloudfront/SKILL.md",
+      "skillFolderHash": "eb2245594bad5e7edf65eed577c207f3f3e24355",
+      "installedAt": "2026-10-02T02:33:17.270Z",
+      "updatedAt": "2026-10-02T02:33:17.270Z"
+    },
+    "amazon-dynamodb": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/aws/agent-toolkit-for-aws.git",
+      "skillPath": "skills/specialized-skills/database-skills/amazon-dynamodb/SKILL.md",
+      "skillFolderHash": "bb6942ff3dbee4dae93c36288145e414271a9423",
+      "installedAt": "2026-10-02T02:33:17.271Z",
+      "updatedAt": "2026-10-02T02:33:17.271Z"
+    },
+    "aws-well-architected-review": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/aws/agent-toolkit-for-aws.git",
+      "skillPath": "skills/core-skills/aws-well-architected-review/SKILL.md",
+      "skillFolderHash": "84c63e1a264f3be88da04a5884d9cbdd52be1194",
+      "installedAt": "2026-10-02T02:33:17.271Z",
+      "updatedAt": "2026-10-02T02:33:17.271Z"
+    },
+    "amazon-eventbridge-event-bus": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/aws/agent-toolkit-for-aws.git",
+      "skillPath": "skills/specialized-skills/serverless-skills/amazon-eventbridge-event-bus/SKILL.md",
+      "skillFolderHash": "f65bd04dd0780858ea98f1ca01f94ab815fceb0b",
+      "installedAt": "2026-10-02T02:33:17.271Z",
+      "updatedAt": "2026-10-02T02:33:17.271Z"
     }
   },
   "dismissed": {
