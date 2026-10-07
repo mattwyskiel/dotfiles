@@ -12,6 +12,10 @@ ALWAYS PREFER official generators for scaffolding:
     - e.g. if it has a `bun create` (or similar tool for other platforms), use that
 - Generate first, then customize
 
+## Prose
+For technical documentation, in all its forms, ensure prose is in Simplified Technical English.
+For all prose output, keep it simple and avoid flowery language. Ensure humans can read it.
+
 ## Web Search
 - use `browse`
 
