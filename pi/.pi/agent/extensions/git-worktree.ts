@@ -658,9 +658,9 @@ function parseDoneArgs(args: string): { force: boolean; keepBranch: boolean; del
 	};
 }
 
-async function scheduleCleanup(metadata: WorktreeMetadata, deleteBranch: boolean, force: boolean): Promise<string> {
+async function scheduleCleanup(metadata: WorktreeMetadata, deleteBranch: boolean, force: boolean, forceDeleteBranch = force): Promise<string> {
 	const scriptPath = join(tmpdir(), `pi-worktree-cleanup-${process.pid}-${Date.now()}.sh`);
-	const branchDeleteFlag = force ? "-D" : "-d";
+	const branchDeleteFlag = forceDeleteBranch ? "-D" : "-d";
 	const removeWithGit = `git -C ${shellQuote(metadata.repoRoot)} worktree remove ${force ? "--force " : ""}${shellQuote(metadata.worktreePath)}`;
 	const removeWorktree = metadata.herdrWorkspaceId
 		? [
@@ -807,61 +807,52 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 				ctx.ui.notify("Cannot clean up a detached worktree without a branch name.", "error");
 				return;
 			}
+			if (resolve(metadata.worktreePath) === resolve(metadata.repoRoot)) {
+				ctx.ui.notify("Cannot remove the main repository worktree with /wtdone.", "error");
+				return;
+			}
 			const status = await git(["status", "--porcelain"], metadata.worktreePath);
 			const dirty = status.length > 0;
-			const merged = await isBranchMerged(metadata.repoRoot, metadata.branch, metadata.baseRef);
-			const looksLikeTaskWorktree = metadataFromEnv()?.worktreePath === metadata.worktreePath
-				|| metadata.herdrWorkspaceId === process.env.HERDR_WORKSPACE_ID
-				|| metadata.worktreePath.includes(`${basename(metadata.repoRoot)}-worktrees`);
-
-			if (!looksLikeTaskWorktree && !flags.force) {
-				const ok = await ctx.ui.confirm(
-					"This does not look like a Pi task worktree",
-					`Refusing to remove ${metadata.worktreePath} unless you confirm. Continue?`,
-				);
-				if (!ok) return;
-			}
-
 			if (dirty && !flags.force) {
 				ctx.ui.notify(`Worktree is dirty; commit/stash changes or rerun /wtdone --force.\n${status}`, "error");
 				return;
 			}
 
+			const merged = await isBranchMerged(metadata.repoRoot, metadata.branch, metadata.baseRef);
+			const looksLikeTaskWorktree = metadataFromEnv()?.worktreePath === metadata.worktreePath
+				|| Boolean(metadata.herdrWorkspaceId && metadata.herdrWorkspaceId === process.env.HERDR_WORKSPACE_ID)
+				|| metadata.worktreePath.includes(`${basename(metadata.repoRoot)}-worktrees`);
+			const summary = [
+				`Path: ${metadata.worktreePath}`,
+				`Branch: ${metadata.branch} (${merged ? "merged" : "not merged"} into ${metadata.baseRef})`,
+				...(!looksLikeTaskWorktree ? ["Warning: this does not look like a Pi task worktree."] : []),
+				...(dirty ? ["Warning: uncommitted and untracked files will be lost."] : []),
+				"Pi will shut down, then remove this worktree.",
+			];
+
+			// The selected action is the confirmation; do not ask again afterward.
 			let deleteBranch = flags.deleteBranch;
+			const deleteChoice = merged
+				? "Remove worktree and delete branch"
+				: "Remove worktree and delete unmerged branch (commits may be lost)";
 			if (!flags.keepBranch && !flags.deleteBranch) {
-				ctx.ui.notify([
-					`Path: ${metadata.worktreePath}`,
-					`Branch: ${metadata.branch}`,
-					`Base: ${metadata.baseRef}`,
-					`Status: ${dirty ? "dirty" : "clean"}`,
-					`Merged into base: ${merged ? "yes" : "no"}`,
-				].join("\n"), "info");
-				const choices = ["Remove worktree only", "Remove worktree and delete branch", "Cancel"];
-				const choice = await ctx.ui.select("Worktree cleanup", choices);
-				if (!choice || choice === "Cancel") return;
-				deleteBranch = choice === "Remove worktree and delete branch";
-			}
-
-			if (deleteBranch && !merged && !flags.force) {
-				const ok = await ctx.ui.confirm(
-					"Branch may not be merged",
-					`${metadata.branch} does not appear to be an ancestor of ${metadata.baseRef}. Delete with git branch -D after removing the worktree?`,
+				const choice = await ctx.ui.select(
+					["Worktree cleanup", ...summary].join("\n"),
+					["Remove worktree only (keep branch)", deleteChoice, "Cancel"],
 				);
+				if (!choice || choice === "Cancel") return;
+				deleteBranch = choice === deleteChoice;
+			} else {
+				const ok = await ctx.ui.confirm("Remove worktree?", [
+					...summary,
+					deleteBranch ? `Delete branch: ${metadata.branch}` : `Keep branch: ${metadata.branch}`,
+					...(deleteBranch && !merged ? ["Warning: deleting this unmerged branch may lose commits."] : []),
+				].join("\n"));
 				if (!ok) return;
-				flags.force = true;
 			}
 
-			const ok = await ctx.ui.confirm(
-				"Remove worktree?",
-				[
-					`This will remove: ${metadata.worktreePath}`,
-					deleteBranch ? `This will also delete branch: ${metadata.branch}` : `Branch will be kept: ${metadata.branch}`,
-					"Pi will shut down first, then cleanup will run outside the worktree.",
-				].join("\n"),
-			);
-			if (!ok) return;
-
-			const scriptPath = await scheduleCleanup(metadata, deleteBranch, flags.force);
+			// Deleting an unmerged branch must not also force worktree removal.
+			const scriptPath = await scheduleCleanup(metadata, deleteBranch, flags.force, flags.force || !merged);
 			ctx.ui.notify(`Scheduled worktree cleanup via ${scriptPath}; shutting down Pi...`, "info");
 			ctx.shutdown();
 		} catch (error) {
@@ -881,7 +872,7 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 	});
 
 	pi.registerCommand("wtdone", {
-		description: "Safely remove the current Pi task worktree after shutting down this session",
+		description: "Remove the current task worktree with one cleanup menu. Use --keep-branch or --delete-branch for one confirmation, and --force to discard uncommitted changes.",
 		handler: doneHandler,
 	});
 

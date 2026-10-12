@@ -46,7 +46,7 @@ The command also shows reset times and any additional model-specific limits repo
 `git-worktree.ts` provides:
 
 - `/wt [--base <ref>] [--no-prompt] [--no-pr] [task]` (alias: `/worktree`) to create a task branch and worktree.
-- `/wtdone` (alias: `/worktree-done`) to safely remove a task worktree.
+- `/wtdone` (alias: `/worktree-done`) shows one cleanup menu: remove the worktree and keep its branch, delete both, or cancel. The menu includes the path and safety warnings; selecting an action confirms it. `--keep-branch` or `--delete-branch` replaces the menu with one confirmation. Dirty worktrees require `--force`, and the main repository cannot be removed. Deleting an unmerged branch warns about lost commits without forcing worktree removal.
 - Conversation-aware task inference. `/wt` can omit `task` when the preceding conversation establishes it. Herdr launches fork persisted sessions so the full context is retained; manual launches include the preceding conversation in their one-shot kickoff prompt.
 - GitHub issue links in the explicit or inferred task are fetched **before** naming and kickoff generation. The issue title, description, state, labels, and comments are passed to naming and preserved in the worktree handoff, including forked Herdr sessions. Local fallback names use the fetched title rather than the URL. Repeated links are fetched once; `--no-prompt` still fetches for naming. Fetch failures stop creation instead of proceeding with missing issue context.
 - A generated kebab-case `pi/...` branch and matching Human Title for the worktree's Pi session and, when available, its Herdr workspace.
