@@ -42,9 +42,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/shadcn/ui.git",
       "skillPath": "skills/shadcn/SKILL.md",
-      "skillFolderHash": "b5791523e07794a4deb201e78eab3f3adbd022c0",
+      "skillFolderHash": "58cbb5c7712d2f1ba359892c8c693d0efe96c829",
       "installedAt": "2026-04-21T18:57:43.460Z",
-      "updatedAt": "2026-10-02T02:26:59.669Z"
+      "updatedAt": "2026-10-12T21:21:08.608Z"
     },
     "frontend-design": {
       "source": "anthropics/skills",
@@ -115,9 +115,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/pulumi/agent-skills.git",
       "skillPath": "pulumi/skills/provider-upgrade/SKILL.md",
-      "skillFolderHash": "fb12df029eaebb7f385114542c0846e87d9db631",
+      "skillFolderHash": "0f2771841e8ae22c01bcc1c00f1c4ebc39c3e7f6",
       "installedAt": "2026-06-16T14:02:40.476Z",
-      "updatedAt": "2026-06-16T14:02:40.476Z"
+      "updatedAt": "2026-10-12T21:21:05.761Z"
     },
     "upstream-patches": {
       "source": "pulumi/agent-skills",
@@ -142,9 +142,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/google/skills.git",
       "skillPath": "skills/cloud/google-cloud-recipe-auth/SKILL.md",
-      "skillFolderHash": "377e20398ff37189e0c8779b034114d68c74351a",
+      "skillFolderHash": "5c495b7c6dda32d1e11c2d928cad4220afb7709a",
       "installedAt": "2026-06-16T14:05:55.574Z",
-      "updatedAt": "2026-10-02T02:27:03.803Z"
+      "updatedAt": "2026-10-12T21:21:10.083Z"
     },
     "vercel-react-view-transitions": {
       "source": "vercel-labs/agent-skills",
