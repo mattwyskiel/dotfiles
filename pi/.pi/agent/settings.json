@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "1.1.0",
+  "lastChangelogVersion": "1.2.0",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "high",
@@ -10,7 +10,9 @@
   ],
   "theme": "dark",
   "externalEditor": "nvim",
-  "packages": [],
+  "packages": [
+    "npm:@ff-labs/pi-fff"
+  ],
   "defaultTools": [
     "+codemode"
   ]
