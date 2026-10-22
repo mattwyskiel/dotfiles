@@ -62,6 +62,7 @@ return { -- Autoformat
       graphql = { 'bun_fmt' },
       handlebars = { 'bun_fmt' },
 
+      go = { 'gofmt' },
       rust = { 'rustfmt' },
     },
   },
