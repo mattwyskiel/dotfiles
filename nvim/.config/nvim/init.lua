@@ -20,7 +20,7 @@ if not vim.g.vscode then
     require 'mattwyskiel.plugins.lazydev', -- LazyDev for lazy loading plugins
     require 'mattwyskiel.plugins.lspconfig', -- LSP configuration
     'b0o/schemastore.nvim', -- JSON schema store
-    require 'mattwyskiel.plugins.conform', -- LSP formatter
+    require 'mattwyskiel.plugins.conform', -- Bun formatting and native LSP format routing
     require 'mattwyskiel.plugins.lint', -- Linting
     require 'mattwyskiel.plugins.blink-cmp', -- Completion engine
 

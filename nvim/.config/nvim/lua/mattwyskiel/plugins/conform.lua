@@ -1,34 +1,70 @@
-return { -- Autoformat
+local bun_filetypes = {
+  'javascript',
+  'javascriptreact',
+  'typescriptreact',
+  'typescript',
+  'json',
+  'jsonc',
+  'json5',
+  'css',
+  'scss',
+  'less',
+  'html',
+  'htmlangular',
+  'vue',
+  'svelte',
+  'yaml',
+  'toml',
+  'markdown',
+  'mdx',
+  'markdown.mdx',
+  'graphql',
+  'handlebars',
+}
+
+local formatters_by_ft = {}
+for _, filetype in ipairs(bun_filetypes) do
+  formatters_by_ft[filetype] = { 'bun_fmt' }
+end
+
+local function format_with_lsp(bufnr, async)
+  if #vim.lsp.get_clients { bufnr = bufnr, method = 'textDocument/formatting' } > 0 then
+    vim.lsp.buf.format { bufnr = bufnr, async = async, timeout_ms = 1000 }
+  end
+end
+
+return {
   'stevearc/conform.nvim',
-  event = { 'BufWritePre' },
+  ft = bun_filetypes,
   cmd = { 'ConformInfo' },
   init = function()
     vim.filetype.add { extension = { mdx = 'mdx', handlebars = 'handlebars' } }
-  end,
-  keys = {
-    {
-      '<leader>f',
-      function()
-        require('conform').format { async = true, lsp_format = 'fallback' }
+
+    vim.keymap.set('', '<leader>f', function()
+      local bufnr = vim.api.nvim_get_current_buf()
+      if formatters_by_ft[vim.bo[bufnr].filetype] then
+        require('conform').format { bufnr = bufnr, async = true, lsp_format = 'never' }
+      else
+        format_with_lsp(bufnr, true)
+      end
+    end, { desc = '[F]ormat buffer' })
+
+    vim.api.nvim_create_autocmd('BufWritePre', {
+      desc = 'Format with the LSP outside Bun-supported file types',
+      group = vim.api.nvim_create_augroup('mattwyskiel-lsp-format', { clear = true }),
+      callback = function(event)
+        if not formatters_by_ft[vim.bo[event.buf].filetype] then
+          format_with_lsp(event.buf, false)
+        end
       end,
-      mode = '',
-      desc = '[F]ormat buffer',
-    },
-  },
+    })
+  end,
   opts = {
     notify_on_error = false,
+    default_format_opts = { lsp_format = 'never' },
     format_on_save = function(bufnr)
-      -- Disable "format_on_save lsp_fallback" for languages that don't
-      -- have a well standardized coding style. You can add additional
-      -- languages here or re-enable it for the disabled ones.
-      local disable_filetypes = { c = true, cpp = true }
-      if disable_filetypes[vim.bo[bufnr].filetype] then
-        return nil
-      else
-        return {
-          timeout_ms = 500,
-          lsp_format = 'fallback',
-        }
+      if formatters_by_ft[vim.bo[bufnr].filetype] then
+        return { timeout_ms = 500, lsp_format = 'never' }
       end
     end,
     formatters = {
@@ -38,32 +74,6 @@ return { -- Autoformat
         stdin = true,
       },
     },
-    formatters_by_ft = {
-      lua = { 'stylua' },
-      javascript = { 'bun_fmt' },
-      javascriptreact = { 'bun_fmt' },
-      typescriptreact = { 'bun_fmt' },
-      typescript = { 'bun_fmt' },
-      json = { 'bun_fmt' },
-      jsonc = { 'bun_fmt' },
-      json5 = { 'bun_fmt' },
-      css = { 'bun_fmt' },
-      scss = { 'bun_fmt' },
-      less = { 'bun_fmt' },
-      html = { 'bun_fmt' },
-      htmlangular = { 'bun_fmt' },
-      vue = { 'bun_fmt' },
-      svelte = { 'bun_fmt' },
-      yaml = { 'bun_fmt' },
-      toml = { 'bun_fmt' },
-      markdown = { 'bun_fmt' },
-      mdx = { 'bun_fmt' },
-      ['markdown.mdx'] = { 'bun_fmt' },
-      graphql = { 'bun_fmt' },
-      handlebars = { 'bun_fmt' },
-
-      go = { 'gofmt' },
-      rust = { 'rustfmt' },
-    },
+    formatters_by_ft = formatters_by_ft,
   },
 }
