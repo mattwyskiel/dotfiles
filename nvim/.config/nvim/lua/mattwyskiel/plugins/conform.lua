@@ -2,6 +2,9 @@ return { -- Autoformat
   'stevearc/conform.nvim',
   event = { 'BufWritePre' },
   cmd = { 'ConformInfo' },
+  init = function()
+    vim.filetype.add { extension = { mdx = 'mdx', handlebars = 'handlebars' } }
+  end,
   keys = {
     {
       '<leader>f',
@@ -46,7 +49,22 @@ return { -- Autoformat
       typescriptreact = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
       typescript = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
       json = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      jsonc = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      json5 = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
       css = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      scss = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      less = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      html = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      htmlangular = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      vue = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      svelte = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      yaml = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      toml = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      markdown = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      mdx = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      ['markdown.mdx'] = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      graphql = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      handlebars = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
 
       rust = { 'rustfmt' },
     },
