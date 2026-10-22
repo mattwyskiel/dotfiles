@@ -28,54 +28,25 @@ return { -- Autoformat
         }
       end
     end,
+    formatters = {
+      bun_fmt = {
+        command = 'bun',
+        args = { 'fmt', '--no-script', '--stdin-filepath', '$FILENAME' },
+        stdin = true,
+      },
+    },
     formatters_by_ft = {
       lua = { 'stylua' },
       -- Conform can also run multiple formatters sequentially
       -- python = { "isort", "black" },
       --
       -- You can use 'stop_after_first' to run the first available formatter from the list
-      javascript = function(bufnr)
-        if require('conform').get_formatter_info('biome', bufnr).available then
-          return { 'biome' }
-        else
-          return { 'prettierd', 'prettier', stop_after_first = true }
-        end
-      end,
-      javascriptreact = function(bufnr)
-        if require('conform').get_formatter_info('biome', bufnr).available then
-          return { 'biome' }
-        else
-          return { 'prettierd', 'prettier', stop_after_first = true }
-        end
-      end,
-      typescriptreact = function(bufnr)
-        if require('conform').get_formatter_info('biome', bufnr).available then
-          return { 'biome' }
-        else
-          return { 'prettierd', 'prettier', stop_after_first = true }
-        end
-      end,
-      typescript = function(bufnr)
-        if require('conform').get_formatter_info('biome', bufnr).available then
-          return { 'biome' }
-        else
-          return { 'prettierd', 'prettier', stop_after_first = true }
-        end
-      end,
-      json = function(bufnr)
-        if require('conform').get_formatter_info('biome', bufnr).available then
-          return { 'biome' }
-        else
-          return { 'prettierd', 'prettier', stop_after_first = true }
-        end
-      end,
-      css = function(bufnr)
-        if require('conform').get_formatter_info('biome', bufnr).available then
-          return { 'biome' }
-        else
-          return { 'prettierd', 'prettier', stop_after_first = true }
-        end
-      end,
+      javascript = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      javascriptreact = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      typescriptreact = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      typescript = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      json = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
+      css = { 'bun_fmt', 'prettierd', 'prettier', stop_after_first = true },
 
       rust = { 'rustfmt' },
     },
