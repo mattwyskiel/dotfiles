@@ -41,6 +41,34 @@ Model-only presets use Pi's native `enabledModels` setting in `../settings.json`
 
 The command also shows reset times and any additional model-specific limits reported by OpenAI. It reuses Pi's `openai-codex` OAuth login; it does not read or store credentials itself.
 
+## Subagent extension
+
+`subagent.ts` adds a `subagent` tool. The tool runs one task in a child `pi --mode json` process and returns only the child's final message. The child's tool calls and file reads do not go into the parent context.
+
+Parameters:
+
+- `task`: the instruction. For a fresh subagent, write a self-contained brief.
+- `model`: optional `provider/id`, with an optional `:thinking` suffix. The default is the parent's model and thinking level.
+- `fork: true`: the child starts from the parent conversation at the current point.
+- `resume`: the session path from an earlier result. The child continues with its own context.
+- `tools`, `cwd`: fresh subagents only.
+
+The model can make several `subagent` calls in one turn to run them in parallel (at most 4 at a time). Codemode scripts can call `tools.subagent()`, which resolves to `{ output, session, model }` with the full output.
+
+### Token use
+
+- The parent sees at most 12 KB of the final message and the child session path. If the message is longer, the full text goes to a temporary file and the result gives its path.
+- A child keeps the parent's system prompt and tools. The subagent rules go in the task message. The child session also uses the parent's session ID, because OpenAI Codex routes its prompt cache by session ID. Thus the first request of a fresh or forked child reads the parent's prompt from the cache. In tests with `gpt-6-luna`, a fresh child sent about 200 uncached input tokens instead of about 7,500.
+- These settings prevent cache reuse: a `model` that is not the parent's model, and a `tools` allowlist.
+- The tool declaration is about 400 tokens. It lists the models from `enabledModels`.
+
+### Limits
+
+- Subagents cannot start subagents. The tool stays declared in children so that the child's tool list agrees with the parent's, but calls fail. Set `PI_SUBAGENT_MAX_DEPTH` to allow more levels.
+- `fork` needs a saved parent session. It is not available with `--no-session`.
+- Child sessions are in `<parent session>/subagents/`, so `pi -c` does not open them. Without a parent session file, they are in the system temporary directory.
+- Children load the same extensions and MCP servers as the parent. The child environment does not include `PI_WORKTREE_CONFIG`, so a child cannot delete the parent's worktree launch configuration.
+
 ## Git worktree extension
 
 `git-worktree.ts` provides:
