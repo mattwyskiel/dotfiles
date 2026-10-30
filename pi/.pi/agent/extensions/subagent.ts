@@ -26,9 +26,12 @@ const RESULT_MAX_BYTES = 12 * 1024;
 const RESULT_MAX_LINES = 400;
 const STDERR_MAX_CHARS = 4_000;
 const COLLAPSED_PREVIEW_LINES = 6;
+// Children are read-only: file changes stay in one agent. Blocking calls (instead of removing the
+// tools) keeps the child's tool list, and so the prompt cache, the same as the parent's.
+const WRITE_TOOLS = new Set(["edit", "write"]);
 
 const FINAL_MESSAGE_RULE =
-	"Nobody can answer questions. Your final message is the only thing the parent agent receives. Make it complete and short: the result, the evidence (file paths with line numbers, commands and their outcome), and anything left undone. Do not restate the task or describe your process.";
+	"You are read-only: do not change files, not even with bash. Nobody can answer questions. Your final message is the only thing the parent agent receives. Make it complete and short: the result, the evidence (file paths with line numbers, commands and their outcome), and anything left undone. Do not restate the task or describe your process.";
 
 // Subagent rules go in the task message, not the system prompt: an unchanged system prompt lets
 // the child's first request reuse the parent's prompt cache.
@@ -195,12 +198,13 @@ function createLimiter(limit: number) {
 
 function describe(models: string[]): string {
 	return [
-		"Run a task in a separate Pi agent and get back only its final message.",
-		"Use it to keep large searches, logs, and file reads out of your context, to do independent work in parallel (several calls in one turn), or to use another model.",
-		"Fresh (default): the subagent sees only `task` plus project instructions.",
-		"fork: true: it inherits this conversation, so a short task is enough; best for side tasks that need the discussion so far.",
-		"resume: continue an earlier subagent with its own context.",
-		"Parallel subagents must not edit the same files. Subagents cannot start subagents.",
+		"Run a task in a separate, read-only Pi agent and get back only its final message.",
+		"Use it only when separate context helps: (1) noisy exploration (many searches, logs, or file reads) where only a short summary matters; (2) independent investigations in parallel (several calls in one turn); (3) a fresh-eyes review or a second opinion, optionally from another model.",
+		"Do routine work and all file changes yourself.",
+		"Fresh (default): the subagent sees only `task` plus project instructions. Use fresh for reviews: give the requirements and the diff or paths, not your reasoning.",
+		"fork: true: it inherits this conversation; use it for side investigations that need the discussion so far.",
+		"resume: ask an earlier subagent a follow-up.",
+		"Subagents cannot start subagents.",
 		models.length ? `Models: ${models.join(", ")}.` : "",
 	]
 		.filter(Boolean)
@@ -392,6 +396,14 @@ export default function subagentExtension(pi: ExtensionAPI) {
 		});
 
 	register([]);
+
+	// Nested calls from codemode scripts also pass through tool_call, so this covers them too.
+	if (DEPTH > 0) {
+		pi.on("tool_call", (event) => {
+			if (!WRITE_TOOLS.has(event.toolName)) return undefined;
+			return { block: true, reason: "Subagents are read-only. Report the change you would make instead." };
+		});
+	}
 
 	// List the session's scoped models in the description. Children compute the same list, so
 	// their tool declarations still match the parent's.

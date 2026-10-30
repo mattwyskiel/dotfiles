@@ -45,11 +45,19 @@ The command also shows reset times and any additional model-specific limits repo
 
 `subagent.ts` adds a `subagent` tool. The tool runs one task in a child `pi --mode json` process and returns only the child's final message. The child's tool calls and file reads do not go into the parent context.
 
+The main agent does most work itself. The tool description limits subagents to tasks where a separate context helps:
+
+- Noisy exploration, where only a short summary matters.
+- Independent investigations in parallel.
+- A fresh-eyes review or a second opinion, optionally from another model. A review uses a fresh subagent that gets the requirements and the diff, not the author's reasoning.
+
+Subagents are read-only. Calls to `edit` and `write` fail in a child, also from codemode scripts. The tools stay declared so that the prompt cache still applies. The task message tells the child not to change files with `bash`, but the extension cannot enforce this. Do file changes in the main session, or start a separate task with `/wt`.
+
 Parameters:
 
 - `task`: the instruction. For a fresh subagent, write a self-contained brief.
 - `model`: optional `provider/id`, with an optional `:thinking` suffix. The default is the parent's model and thinking level.
-- `fork: true`: the child starts from the parent conversation at the current point.
+- `fork: true`: the child starts from the parent conversation at the current point. Use it for side investigations that need that conversation, not for reviews.
 - `resume`: the session path from an earlier result. The child continues with its own context.
 - `tools`, `cwd`: fresh subagents only.
 
