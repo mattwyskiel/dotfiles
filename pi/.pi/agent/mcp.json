@@ -1,19 +1,28 @@
 {
-    "mcpServers": {
-        "chrome-devtools": {
-            "command": "npx",
-            "args": ["-y", "chrome-devtools-mcp@latest"]
-        },
-        "xcode": {
-            "command": "xcrun",
-            "args": ["mcpbridge"]
-        },
-        "aws": {
-            "command": "uvx",
-            "args": [
-                "mcp-proxy-for-aws-cli@latest",
-                "https://aws-mcp.us-east-1.api.aws/mcp"
-            ]
-        }
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"]
+    },
+    "xcode": {
+      "command": "xcrun",
+      "args": ["mcpbridge"]
+    },
+    "aws": {
+      "command": "uvx",
+      "args": [
+        "mcp-proxy-for-aws-cli@latest",
+        "https://aws-mcp.us-east-1.api.aws/mcp"
+      ]
+    },
+    "rea": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "rea-agents@6.8.0", "mcp"],
+      "env": {
+        "GHIDRA_INSTALL_DIR": "/Users/matthewwyskiel/Downloads/ghidra_12.1.3_PUBLIC/",
+        "JAVA_HOME": "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"
+      }
     }
+  }
 }
