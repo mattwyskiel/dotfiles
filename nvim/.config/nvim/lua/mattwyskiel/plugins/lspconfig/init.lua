@@ -51,6 +51,21 @@ return {
 
     -- SourceKit ships with Xcode and is not managed by mise.
     if vim.fn.has 'mac' == 1 and vim.fn.executable 'sourcekit-lsp' == 1 then
+      local default_root_dir = vim.lsp.config.sourcekit.root_dir
+      vim.lsp.config('sourcekit', {
+        cmd = { 'xcrun', 'sourcekit-lsp' },
+        capabilities = capabilities,
+        root_dir = function(bufnr, on_dir)
+          -- Use the nearest build system. A parent Xcode workspace must not
+          -- hide a Swift package's test targets from SourceKit's SwiftPM support.
+          local root = vim.fs.root(bufnr, { { 'buildServer.json', '.bsp', 'Package.swift' } })
+          if root then
+            on_dir(root)
+          else
+            default_root_dir(bufnr, on_dir)
+          end
+        end,
+      })
       vim.lsp.enable 'sourcekit'
     end
   end,
