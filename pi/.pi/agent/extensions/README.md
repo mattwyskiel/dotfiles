@@ -31,15 +31,17 @@ Model-only presets use Pi's native `enabledModels` setting in `../settings.json`
 - `/model` starts with the shortlist; press `Tab` to switch to all models from configured providers. Selecting a model outside the shortlist does not add it unless it is saved as the default.
 - `pi --model provider/model:high` selects a model at startup.
 
-## Codex usage extension
+## Provider usage package
 
-`codex-usage.ts` displays the remaining OpenAI Codex subscription windows in Pi's footer. It refreshes when a session starts, after each completed agent run, and on demand:
+[`@narumitw/pi-usage`](https://www.npmjs.com/package/@narumitw/pi-usage) replaces the custom Codex usage extension. It is configured in `../settings.json`. Install it with:
 
-```text
-/codex-usage
+```bash
+pi install npm:@narumitw/pi-usage
 ```
 
-The command also shows reset times and any additional model-specific limits reported by OpenAI. It reuses Pi's `openai-codex` OAuth login; it does not read or store credentials itself.
+Run `/usage` to check provider usage, limits, reset times, and API balances. The package shows usage for the selected provider in Pi's footer and refreshes every five minutes. Codex usage uses Pi's existing OAuth login.
+
+Codex Fast mode is off by default. Enabling it with `/fast` uses more plan allowance.
 
 ## Subagent extension
 
