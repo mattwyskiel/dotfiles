@@ -33,15 +33,15 @@ Model-only presets use Pi's native `enabledModels` setting in `../settings.json`
 
 ## Provider usage package
 
-[`@narumitw/pi-usage`](https://www.npmjs.com/package/@narumitw/pi-usage) replaces the custom Codex usage extension. It is configured in `../settings.json`. Install it with:
+[`@specode/pi-subscription-usage`](https://github.com/specode/pi-subscription-usage) shows subscription quotas for the selected provider in Pi's footer. It is configured in `../settings.json`. Install it with:
 
 ```bash
-pi install npm:@narumitw/pi-usage
+pi install npm:@specode/pi-subscription-usage
 ```
 
-Run `/usage` to check provider usage, limits, reset times, and API balances. The package shows usage for the selected provider in Pi's footer and refreshes every five minutes. Codex usage uses Pi's existing OAuth login.
+Run `/usage` to check quota windows and reset times. Supported providers include OpenAI Codex, OpenCode Go, xAI Grok, and Claude through `pi-claude-bridge` 0.9.3 or newer. Queried providers refresh after turns and every five minutes, with a five-minute cache. Codex usage uses Pi's existing OAuth login.
 
-Codex Fast mode is off by default. Enabling it with `/fast` uses more plan allowance.
+Claude usage comes from the bridge's response headers, not a separate request. It needs no additional login and does not read Claude Code credentials. The footer stays empty until the first usage report arrives; `/usage` shows the last report and its time rather than fetching fresh Claude data.
 
 ## Subagent extension
 

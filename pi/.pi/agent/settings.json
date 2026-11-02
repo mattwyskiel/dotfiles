@@ -14,7 +14,7 @@
   "packages": [
     "npm:@ff-labs/pi-fff",
     "npm:pi-claude-bridge",
-    "npm:@narumitw/pi-usage"
+    "npm:@specode/pi-subscription-usage"
   ],
   "defaultTools": [
     "+codemode"
