@@ -23,12 +23,23 @@ const issue = {
 	comments: [{ author: { login: "reviewer" }, body: "Add a regression test for expired cookies." }],
 };
 
-function harness({ model = false, messages = [], herdr = false, ghError, ghOutput, cleanup } = {}) {
+const activeModel = { provider: "current-provider", id: "current-model" };
+const otherModel = { provider: "other-provider", id: "org/other-model" };
+
+function harness({ model = false, messages = [], herdr = false, ghError, ghOutput, cleanup,
+	argv = [], availableModels = [activeModel, otherModel], modelAuth = true } = {}) {
 	const calls = [];
 	const files = new Map();
 	const notifications = [];
 	const commands = new Map();
+	const events = new Map();
 	const dialogs = [];
+	let sessionName;
+	const processState = {
+		pid: 123,
+		argv: ["node", "pi", ...argv],
+		env: herdr ? { HERDR_ENV: "1", HERDR_WORKSPACE_ID: "source-workspace" } : {},
+	};
 	let shutdown = false;
 	const metadata = cleanup && {
 		repoRoot: "/repo",
@@ -92,13 +103,29 @@ function harness({ model = false, messages = [], herdr = false, ghError, ghOutpu
 		unlink: async (path) => { files.delete(path); },
 		tmpdir: () => "/tmp",
 		basename, dirname, join, resolve,
-		process: { pid: 123, env: herdr ? { HERDR_ENV: "1", HERDR_WORKSPACE_ID: "source-workspace" } : {} },
+		process: processState,
 	});
-	extension({ on: () => {}, registerCommand: (name, command) => commands.set(name, command) });
+	extension({
+		on: (name, handler) => events.set(name, handler),
+		registerCommand: (name, command) => commands.set(name, command),
+		getSessionName: () => sessionName,
+		setSessionName: (name) => { sessionName = name; },
+		setModel: async (model) => {
+			calls.push({ command: "setModel", model });
+			if (modelAuth) ctx.model = model;
+			return modelAuth;
+		},
+		appendEntry: (customType, data) => calls.push({ command: "appendEntry", customType, data }),
+		sendUserMessage: (prompt) => calls.push({ command: "prompt", prompt, model: ctx.model }),
+	});
 	const ctx = {
 		cwd: "/repo",
-		model: model ? {} : undefined,
-		modelRegistry: { getApiKeyAndHeaders: async () => ({ ok: true, apiKey: "test-only" }) },
+		model: model ? activeModel : undefined,
+		modelRegistry: {
+			getApiKeyAndHeaders: async () => ({ ok: true, apiKey: "test-only" }),
+			getAll: () => availableModels,
+			find: (provider, id) => availableModels.find((model) => model.provider === provider && model.id === id),
+		},
 		sessionManager: {
 			getEntries: () => metadata ? [{ type: "custom", customType: "git-worktree", data: metadata }] : [],
 			getLeafId: () => null,
@@ -118,12 +145,140 @@ function harness({ model = false, messages = [], herdr = false, ghError, ghOutpu
 		},
 	};
 	return {
-		calls, files, notifications, dialogs,
+		calls, files, notifications, dialogs, ctx, env: processState.env,
+		start: (reason = "startup") => events.get("session_start")({ reason }, ctx),
 		get shutdown() { return shutdown; },
 		get modelContext() { return modelContext; },
 		run: (args, command = "wt") => commands.get(command).handler(args, ctx),
 		config: () => JSON.parse([...files.entries()].find(([path]) => path.endsWith(".json"))[1]),
 	};
+}
+
+for (const herdr of [false, true]) {
+	for (const noPrompt of [false, true]) {
+		test(`active model is carried into worktree startup: Herdr=${herdr}, idle=${noPrompt}`, async () => {
+			const app = harness({ model: true, herdr });
+			await app.run(`${noPrompt ? "--no-prompt " : ""}fix auth refresh`);
+			assert.deepEqual(app.config().model, activeModel);
+			if (herdr) {
+				const launch = app.calls.find((call) => call.command === "herdr" && call.args[1] === "run" && call.args[3]?.includes("PI_WORKTREE_CONFIG="));
+				assert.ok(!launch.args[3].includes("'@"), "Kickoff must wait for exact model selection in session_start");
+				app.env.PI_WORKTREE_CONFIG = [...app.files.keys()].find((path) => path.endsWith(".json"));
+			}
+			app.ctx.model = otherModel; // New process would otherwise use its configured default.
+			await app.start();
+			assert.deepEqual(app.ctx.model, activeModel);
+			assert.equal(app.calls.filter((call) => call.command === "setModel").length, 1);
+			if (!noPrompt) {
+				const kickoff = app.calls.find((call) => call.command === "prompt");
+				assert.deepEqual(kickoff.model, activeModel);
+			}
+			if (noPrompt) assert.ok(!app.calls.some((call) => call.command === "prompt"));
+			app.ctx.model = otherModel;
+			await app.start("reload");
+			assert.deepEqual(app.ctx.model, otherModel, "Reload must not reset a later model selection");
+		});
+	}
+}
+
+for (const herdr of [false, true]) {
+	for (const flag of ["--model other-provider/org/other-model", "--model=other-provider/org/other-model", '--model "other-provider/org/other-model"']) {
+		test(`explicit worktree model overrides active model: Herdr=${herdr}, ${flag}`, async () => {
+			const app = harness({ model: true, herdr });
+			await app.run(`${flag} fix auth refresh`);
+			assert.deepEqual(app.config().model, otherModel);
+			assert.equal(app.config().metadata.task, "fix auth refresh");
+			if (herdr) {
+				const launch = app.calls.find((call) => call.command === "herdr" && call.args[1] === "run" && call.args[3]?.includes("PI_WORKTREE_CONFIG="));
+				assert.ok(!launch.args[3].includes("--model"), "Exact model selection uses the handoff, not fuzzy CLI lookup");
+				app.env.PI_WORKTREE_CONFIG = [...app.files.keys()].find((path) => path.endsWith(".json"));
+			}
+			await app.start();
+			assert.deepEqual(app.ctx.model, otherModel);
+		});
+	}
+}
+
+for (const argv of [["--model", "other-provider/org/other-model"], ["--model=other-provider/org/other-model"], ["--models", "other-provider/*"]]) {
+	test(`native CLI model selection wins over handoff: ${argv.join(" ")}`, async () => {
+		const app = harness({ model: true, argv });
+		await app.run("fix auth refresh");
+		app.ctx.model = otherModel;
+		await app.start();
+		assert.deepEqual(app.ctx.model, otherModel);
+		assert.ok(!app.calls.some((call) => call.command === "setModel"));
+	});
+}
+
+test("qualified overrides support provider IDs that also contain slashes", async () => {
+	const model = { provider: "llama.cpp/http://localhost:8080", id: "org/model" };
+	const app = harness({ availableModels: [model] });
+	await app.run(`--model ${model.provider}/${model.id} fix auth refresh`);
+	assert.deepEqual(app.config().model, model);
+	await app.start();
+	assert.deepEqual(app.ctx.model, model);
+});
+
+test("model-like text after the CLI option terminator does not override inheritance", async () => {
+	const app = harness({ model: true, argv: ["--", "--model", "other"] });
+	await app.run("fix auth refresh");
+	app.ctx.model = otherModel;
+	await app.start();
+	assert.deepEqual(app.ctx.model, activeModel);
+});
+
+for (const args of ["--model", "--model=", "--model --no-prompt fix auth refresh", "--model missing/model fix auth refresh"]) {
+	test(`invalid model selection stops worktree creation: ${args}`, async () => {
+		const app = harness({ model: true });
+		await app.run(args);
+		assert.equal(app.files.size, 0);
+		assert.ok(!app.calls.some((call) => call.command === "git" || call.command === "model"));
+		assert.ok(app.notifications.some(({ message, level }) => level === "error" && message.includes("model")));
+	});
+}
+
+test("startup with no source model or an older handoff keeps the default model", async () => {
+	const app = harness();
+	await app.run("fix auth refresh");
+	assert.equal(app.config().model, undefined);
+	app.ctx.model = otherModel;
+	await app.start();
+	assert.deepEqual(app.ctx.model, otherModel);
+	assert.ok(!app.calls.some((call) => call.command === "setModel"));
+});
+
+test("startup does not reselect a model that is already active", async () => {
+	const app = harness({ model: true });
+	await app.run("fix auth refresh");
+	await app.start();
+	assert.ok(!app.calls.some((call) => call.command === "setModel"));
+});
+
+for (const herdr of [false, true]) {
+	for (const options of [{ availableModels: [] }, { availableModels: [{ ...activeModel, id: "current-model-v2" }] }, { modelAuth: false }]) {
+		test(`failed exact model selection blocks kickoff: Herdr=${herdr}, ${JSON.stringify(options)}`, async () => {
+			const app = harness({ model: true, herdr, ...options });
+			await app.run("fix auth refresh");
+			if (herdr) app.env.PI_WORKTREE_CONFIG = [...app.files.keys()].find((path) => path.endsWith(".json"));
+			app.ctx.model = otherModel;
+			await app.start();
+			assert.ok(app.notifications.some(({ message, level }) => level === "error" && message.includes("Check model availability and authentication")));
+			assert.ok(!app.calls.some((call) => call.command === "prompt"));
+		});
+	}
+}
+
+for (const model of [null, {}, { provider: "test", id: "" }, { provider: 1, id: "test" }]) {
+	test(`invalid handoff model is rejected: ${JSON.stringify(model)}`, async () => {
+		const app = harness();
+		await app.run("fix auth refresh");
+		const config = app.config();
+		config.model = model;
+		app.files.set("/git/worktree/pi-worktree-launch.json", JSON.stringify(config));
+		await app.start();
+		assert.ok(app.notifications.some(({ message, level }) => level === "error" && message.includes("model must contain")));
+		assert.ok(!app.calls.some((call) => call.command === "prompt"));
+	});
 }
 
 function assertIssueContext(text) {
