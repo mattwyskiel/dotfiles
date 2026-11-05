@@ -83,17 +83,19 @@ The model can make several `subagent` calls in one turn to run them in parallel 
 
 `git-worktree.ts` provides:
 
-- `/wt [--base <ref>] [--no-prompt] [--no-pr] [task]` (alias: `/worktree`) to create a task branch and worktree.
+- `/wt [--base <ref>] [--model <provider/id>] [--no-prompt] [--no-pr] [task]` (alias: `/worktree`) to create a task branch and worktree.
 - `/wtdone` (alias: `/worktree-done`) shows one cleanup menu: remove the worktree and keep its branch, delete both, or cancel. The menu includes the path and safety warnings; selecting an action confirms it. `--keep-branch` or `--delete-branch` replaces the menu with one confirmation. Dirty worktrees require `--force`, and the main repository cannot be removed. Deleting an unmerged branch warns about lost commits without forcing worktree removal.
 - Conversation-aware task inference. `/wt` can omit `task` when the preceding conversation establishes it. Herdr launches fork persisted sessions so the full context is retained; manual launches include the preceding conversation in their one-shot kickoff prompt.
 - GitHub issue links in the explicit or inferred task are fetched **before** naming and kickoff generation. The issue title, description, state, labels, and comments are passed to naming and preserved in the worktree handoff, including forked Herdr sessions. Local fallback names use the fetched title rather than the URL. Repeated links are fetched once; `--no-prompt` still fetches for naming. Fetch failures stop creation instead of proceeding with missing issue context.
-- A generated kebab-case `pi/...` branch and matching Human Title for the worktree's Pi session and, when available, its Herdr workspace.
+- A generated kebab-case `pi/...` branch and matching Human Title for the worktree's Pi session and, when available, its Herdr workspace. Existing local branches and Git ref-prefix conflicts receive a numeric suffix. A local branch named `pi` must be renamed before `/wt` can use the `pi/` namespace.
+- The new session inherits the exact active provider and model. `--model <provider/id>` overrides the model for the new session. Native CLI model options take precedence at startup. Naming still uses the source session's active model.
 - A default kickoff instruction to commit and push completed changes, open a pull request, watch it for review comments, and address actionable feedback.
 - `--no-pr` to omit the pull-request and review-watching instruction while retaining the rest of the kickoff prompt.
 - `--no-prompt` to keep the naming/layout behavior while opening Pi idle (no kickoff prompt, including no pull-request instruction). Useful when you only want a named worktree and will drive Pi yourself.
 - Inside Herdr, native `herdr worktree create` integration so the checkout opens as a workspace grouped with its parent repository. The workspace keeps the fixed layout: equal-width left/right columns, `nvim .` above a fresh terminal in a 70/30 left-column split, and Pi in the right column.
 - `/wtdone` removes Herdr-managed checkouts through `herdr worktree remove`, closing the associated workspace while preserving the existing branch-deletion choices.
 - Outside Herdr, the same branch/worktree creation without trying to spawn a multiplexer. The extension stores a one-shot handoff in the worktree's private Git metadata; the next `pi` started anywhere in that worktree restores its name/metadata and submits the kickoff prompt automatically.
+- Both launch paths apply the handoff only at process startup and delete it after success. Reloading, creating, resuming, or forking a session does not reset a user-selected name or replay kickoff. Handoffs and cleanup metadata must match the current worktree, including when its path uses a symlink. A failed model selection retains the handoff and shows an exact retry command, including the source-session fork when needed.
 
 Examples:
 
@@ -113,10 +115,27 @@ Examples:
 - GitHub CLI (`gh`) installed and authenticated with access to any linked issues
 - Optional: [Herdr](https://herdr.dev) 0.8.2 or newer and Neovim (`nvim`) for grouped automatic workspace spawning
 
-The task-name generation uses the active Pi model when credentials are available and falls back to deterministic local naming otherwise.
+### Provider support
+
+Task naming uses the active model through `ctx.modelRegistry.streamSimple()`. Pi handles registered providers, OAuth refresh, header-only or ambient authentication, endpoint overrides, provider-scoped environment, and virtual-model routing. The extension does not require an API-key string or call the global `pi-ai/compat` API.
+
+Naming makes one request with provider-neutral minimal reasoning and a 60-second abort signal. Claude bridge requests use `cacheRetention: "none"`; `pi-claude-bridge` 0.9.3 routes this marker to an isolated, non-persistent query instead of changing the live coding conversation. Virtual models also use this marker because they can route to the bridge. Other providers keep their default caching. No coding-session ID is reused. The existing naming request uses the selected provider's normal quota or billing; there is no separate fallback provider or paid retry.
+
+JSON names may be wrapped in Markdown or prose. Private thinking is not parsed. Failed, aborted, truncated, or invalid responses use local branch and session names together and show a warning. With no active model, local naming needs no provider call.
+
+The offline tests cover the provider-neutral call contract, naming responses and failures, exact model selection, both launch paths, session-name preservation, and cleanup safety. An additional suite uses the installed Pi runtime with fake native and legacy providers. It checks keyless, header-only, ambient, and endpoint authentication plus virtual-model routing. Neither suite contacts live providers. Live provider availability and credentials still require a local check.
+
+Herdr's `--fork` reads the saved source session. If tree navigation changed only the in-memory leaf, the saved session can point to a different branch of the conversation. This is a separate handoff limit, not a naming-provider limit.
 
 Run the worktree regression tests (Node.js 24+):
 
 ```bash
 node --test pi/.pi/agent/extensions/tests/git-worktree.test.mjs
+```
+
+To include the offline runtime suite, set `PI_TEST_NODE_MODULES` to the `node_modules` directory in your Pi installation (tested with Pi 1.5.0):
+
+```bash
+PI_TEST_NODE_MODULES=/path/to/pi/node_modules \
+  node --test pi/.pi/agent/extensions/tests/git-worktree*.test.mjs
 ```

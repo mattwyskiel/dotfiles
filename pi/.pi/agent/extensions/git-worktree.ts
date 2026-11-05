@@ -1,8 +1,7 @@
-import { complete } from "@earendil-works/pi-ai/compat";
 import { buildSessionContext, type ExtensionAPI, type ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { execFile as execFileCallback, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { chmod, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readFile, realpath, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
@@ -180,10 +179,47 @@ function humanTitleFallback(task: string): string {
 	return title.join(" ").slice(0, 72).trim() || "Pi Worktree Task";
 }
 
-function sanitizeHumanTitle(value: unknown, fallbackTask: string): string {
-	if (typeof value !== "string") return humanTitleFallback(fallbackTask);
-	const title = value.replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").replace(/^['"]|['"]$/g, "").trim();
-	return title.slice(0, 72).trim() || humanTitleFallback(fallbackTask);
+function sanitizeHumanTitle(value: string): string {
+	const title = value.replace(/[\u0000-\u001f\u007f-\u009f]/g, " ").replace(/\s+/g, " ").replace(/^['"]|['"]$/g, "").trim();
+	return title.slice(0, 72).trim();
+}
+
+/** Read JSON objects without treating braces in strings or adjacent objects as one object. */
+function parseTaskIdentity(text: string): TaskIdentity | undefined {
+	let start = -1;
+	let depth = 0;
+	let quoted = false;
+	let escaped = false;
+	for (let index = 0; index < text.length; index += 1) {
+		const char = text[index];
+		if (start < 0) {
+			if (char !== "{") continue;
+			start = index;
+		}
+		if (quoted) {
+			if (escaped) escaped = false;
+			else if (char === "\\") escaped = true;
+			else if (char === '"') quoted = false;
+			continue;
+		}
+		if (char === '"') quoted = true;
+		else if (char === "{") depth += 1;
+		else if (char === "}") depth -= 1;
+		if (depth !== 0) continue;
+
+		try {
+			const parsed = JSON.parse(text.slice(start, index + 1)) as { slug?: unknown; title?: unknown };
+			if (typeof parsed.slug === "string" && /[a-z0-9]/i.test(parsed.slug)
+				&& typeof parsed.title === "string" && parsed.title.trim()) {
+				const title = sanitizeHumanTitle(parsed.title);
+				if (title) return { slug: slugify(parsed.slug), title };
+			}
+		} catch {
+			// Providers may wrap JSON in Markdown or prose. Try the next object.
+		}
+		start = -1;
+	}
+	return undefined;
 }
 
 /**
@@ -197,14 +233,15 @@ async function summarizeTaskIdentity(
 ): Promise<TaskIdentity> {
 	const fallbackTitle = humanTitleFallback(fallbackTask);
 	const fallback = { slug: summarizeTaskSlugFallback(fallbackTask), title: fallbackTitle };
-	if (!ctx.model) return fallback;
+	const model = ctx.model;
+	if (!model) return fallback;
 
 	try {
-		const auth = await ctx.modelRegistry.getApiKeyAndHeaders(ctx.model);
-		if (!auth.ok || !auth.apiKey) return fallback;
-
-		const response = await complete(
-			ctx.model,
+		// The registry owns custom provider dispatch, OAuth, ambient credentials,
+		// endpoint overrides, provider-scoped environment, and virtual routing.
+		const signal = AbortSignal.any([AbortSignal.timeout(60_000), ...(ctx.signal ? [ctx.signal] : [])]);
+		const response = await ctx.modelRegistry.streamSimple(
+			model,
 			{
 				messages: [{
 					role: "user" as const,
@@ -220,20 +257,23 @@ async function summarizeTaskIdentity(
 					timestamp: Date.now(),
 				}],
 			},
-			{ apiKey: auth.apiKey, headers: auth.headers, reasoningEffort: "minimal" },
-		);
-		const content = response.content as Array<{ type: string; text?: string }>;
-		const text = content
-			.filter((block) => block.type === "text" && typeof block.text === "string")
-			.map((block) => block.text)
-			.join(" ");
-		const json = text.match(/\{[\s\S]*\}/)?.[0];
-		if (!json) return fallback;
-		const parsed = JSON.parse(json) as { slug?: unknown; title?: unknown };
-		const title = sanitizeHumanTitle(parsed.title, fallbackTask);
-		const slugSource = typeof parsed.slug === "string" && parsed.slug.trim() ? parsed.slug : title;
-		return { slug: slugify(slugSource), title };
+			{
+				reasoning: "minimal",
+				// Bridge requests must be isolated. A virtual model can route to it.
+				// Keep other providers' default caching to avoid increasing their cost.
+				cacheRetention: model.provider === "claude-bridge" || model.api === "pi-virtual" ? "none" : undefined,
+				signal,
+			},
+		).result();
+		if (response.stopReason === "error" || response.stopReason === "aborted" || response.stopReason === "length") {
+			throw new Error("Task naming did not finish");
+		}
+		const identity = parseTaskIdentity(contentText(response.content));
+		if (!identity) throw new Error("Task naming did not return a valid slug and title");
+		return identity;
 	} catch {
+		// Do not expose provider errors, which can contain credentials or payloads.
+		ctx.ui.notify(`Task naming with ${model.provider}/${model.id} failed; using local branch and session names.`, "warning");
 		return fallback;
 	}
 }
@@ -310,17 +350,15 @@ async function uniqueWorktreePath(repoRoot: string, slug: string): Promise<strin
 
 async function uniqueBranchName(repoRoot: string, slug: string): Promise<string> {
 	const base = `pi/${slug}`;
+	const refs = (await git(["for-each-ref", "--format=%(refname:strip=2)", "refs/heads/"], repoRoot)).split("\n");
+	if (refs.includes("pi")) throw new Error("The local branch 'pi' blocks the pi/ task branch namespace. Rename it before using /wt.");
 	let branch = base;
 	let index = 2;
-	while (true) {
-		try {
-			await git(["rev-parse", "--verify", "--quiet", branch], repoRoot);
-			branch = `${base}-${index}`;
-			index += 1;
-		} catch {
-			return branch;
-		}
+	while (refs.some((ref) => ref === branch || ref.startsWith(`${branch}/`))) {
+		branch = `${base}-${index}`;
+		index += 1;
 	}
+	return branch;
 }
 
 function parseArgs(args: string): { base?: string; model?: string; noPrompt: boolean; noPr: boolean; task: string } {
@@ -639,14 +677,15 @@ async function defaultBaseRef(cwd: string, branch: string, worktrees: WorktreeLi
 }
 
 async function detectWorktreeMetadata(ctx: ExtensionCommandContext): Promise<WorktreeMetadata> {
-	const entries = ctx.sessionManager.getEntries();
+	const worktreePath = await git(["rev-parse", "--show-toplevel"], ctx.cwd);
+	const entries = ctx.sessionManager.getBranch();
 	for (const entry of entries.slice().reverse()) {
 		if (entry.type !== "custom" || entry.customType !== "git-worktree") continue;
 		const data = entry.data as Partial<WorktreeMetadata> | undefined;
-		if (data?.repoRoot && data.worktreePath && data.branch && data.baseRef) return data as WorktreeMetadata;
+		if (data?.repoRoot && data.worktreePath && data.branch && data.baseRef
+			&& await sameWorktree(data.worktreePath, worktreePath)) return data as WorktreeMetadata;
 	}
 
-	const worktreePath = await git(["rev-parse", "--show-toplevel"], ctx.cwd);
 	const branch = await git(["branch", "--show-current"], worktreePath);
 	const { stdout } = await run("git", ["worktree", "list", "--porcelain"], worktreePath);
 	const worktrees = parseWorktreeList(stdout);
@@ -707,39 +746,54 @@ async function scheduleCleanup(metadata: WorktreeMetadata, deleteBranch: boolean
 	return scriptPath;
 }
 
-export default function gitWorktreeExtension(pi: ExtensionAPI) {
-	let launchConfigPath: string | undefined;
+async function sameWorktree(left: string, right: string): Promise<boolean> {
+	try {
+		return await realpath(left) === await realpath(right);
+	} catch (error) {
+		// Forked session metadata can refer to a worktree that was removed.
+		if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+		throw error;
+	}
+}
 
+export default function gitWorktreeExtension(pi: ExtensionAPI) {
 	pi.on("session_start", async (event, ctx) => {
-		launchConfigPath = process.env.PI_WORKTREE_CONFIG;
+		// A handoff belongs to process startup, not /reload, /new, /resume, or /fork.
+		if (event.reason !== "startup") return;
+		const launchConfigPath = process.env.PI_WORKTREE_CONFIG;
+		delete process.env.PI_WORKTREE_CONFIG;
 		let metadata = metadataFromEnv();
 		let kickoff: string | undefined;
 		let configPath = launchConfigPath;
-		let consumeConfig = false;
 
-		if (!configPath && event.reason === "startup") {
+		if (!configPath) {
 			try {
 				const candidate = await pendingLaunchConfigPath(ctx.cwd);
 				if (existsSync(candidate)) {
 					configPath = candidate;
-					consumeConfig = true;
 				}
 			} catch {
 				// Starting Pi outside a Git worktree is unrelated to this extension.
 			}
 		}
 
-		if (configPath && existsSync(configPath)) {
+		if (configPath) {
+			let retryCommand: string | undefined;
 			try {
 				const config = await loadLaunchConfig(configPath);
+				const worktreeRoot = await git(["rev-parse", "--show-toplevel"], ctx.cwd);
+				if (!await sameWorktree(config.metadata.worktreePath, worktreeRoot)) {
+					throw new Error("Worktree config does not belong to the current worktree");
+				}
 				metadata = config.metadata;
+				retryCommand = piCommand(metadata, configPath, config.sourceSession);
 				// Apply the handoff once, before kickoff. Native CLI model selection
 				// takes precedence, and reloads must not undo later model changes.
 				const cliArgs = process.argv.slice(2);
 				const optionEnd = cliArgs.indexOf("--");
 				const hasModelOverride = cliArgs.slice(0, optionEnd < 0 ? undefined : optionEnd)
 					.some((arg) => /^--(?:model|models|provider)(?:=|$)/.test(arg));
-				if (event.reason === "startup" && config.model && !hasModelOverride
+				if (config.model && !hasModelOverride
 					&& (ctx.model?.provider !== config.model.provider || ctx.model?.id !== config.model.id)) {
 					const model = ctx.modelRegistry.find(config.model.provider, config.model.id);
 					if (!model || !await pi.setModel(model)) {
@@ -747,16 +801,22 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 					}
 				}
 				if (pi.getSessionName() !== config.sessionName) pi.setSessionName(config.sessionName);
-				if (consumeConfig) await unlink(configPath);
-				if (event.reason === "startup") kickoff = config.prompt;
+				await unlink(configPath);
+				kickoff = config.prompt;
 			} catch (error) {
 				const message = error instanceof Error ? error.message : String(error);
-				ctx.ui.notify(`Could not load worktree config ${configPath}: ${message}`, "error");
+				ctx.ui.notify([
+					`Could not load worktree config ${configPath}: ${message}`,
+					...(retryCommand ? [`After fixing the error, retry with: ${retryCommand}`] : []),
+				].join("\n"), "error");
+				return;
 			}
 		}
 
 		if (!metadata) return;
-		const alreadyPersisted = ctx.sessionManager.getEntries().some((entry) => {
+		const currentRoot = await git(["rev-parse", "--show-toplevel"], ctx.cwd);
+		if (!await sameWorktree(metadata.worktreePath, currentRoot)) return;
+		const alreadyPersisted = ctx.sessionManager.getBranch().some((entry) => {
 			if (entry.type !== "custom" || entry.customType !== "git-worktree") return false;
 			const data = entry.data as Partial<WorktreeMetadata> | undefined;
 			return data?.worktreePath === metadata.worktreePath && data.branch === metadata.branch;
@@ -764,12 +824,6 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 
 		if (!alreadyPersisted) pi.appendEntry("git-worktree", metadata);
 		if (kickoff) pi.sendUserMessage(kickoff);
-	});
-
-	pi.on("session_shutdown", async () => {
-		if (!launchConfigPath) return;
-		await unlink(launchConfigPath).catch(() => undefined);
-		launchConfigPath = undefined;
 	});
 
 	async function handler(args: string, ctx: ExtensionCommandContext) {
@@ -842,7 +896,7 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 				ctx.ui.notify("Cannot clean up a detached worktree without a branch name.", "error");
 				return;
 			}
-			if (resolve(metadata.worktreePath) === resolve(metadata.repoRoot)) {
+			if (await sameWorktree(metadata.worktreePath, metadata.repoRoot)) {
 				ctx.ui.notify("Cannot remove the main repository worktree with /wtdone.", "error");
 				return;
 			}
