@@ -1,5 +1,10 @@
 {
   "mcpServers": {
+    "browse": {
+      "command": "~/.local/bin/browse",
+      "args": ["mcp"],
+      "description": "Control Chrome through the browse extension."
+    },
     "chrome-devtools": {
       "command": "npx",
       "args": ["-y", "chrome-devtools-mcp@latest"]

@@ -191,16 +191,6 @@
       "installedAt": "2026-09-02T01:39:50.597Z",
       "updatedAt": "2026-10-29T20:31:56.384Z"
     },
-    "browser": {
-      "source": "browserbase/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/browserbase/skills.git",
-      "skillPath": "skills/browser/SKILL.md",
-      "skillFolderHash": "a24f98728784659e1ee17e13e902946d28b29357",
-      "pluginName": "browse",
-      "installedAt": "2026-10-02T02:24:10.571Z",
-      "updatedAt": "2026-10-02T02:24:10.571Z"
-    },
     "aws-storage": {
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github",

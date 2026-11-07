@@ -4,5 +4,5 @@
 - Commit each logical change on the current branch as you go, including my changes. Split large diffs into focused commits. Do not push unless I ask.
 - Scaffold new projects and components with the official generator (`bun create`, `npx create-next-app`, `pulumi new`, `shadcn add`, and similar), then customize.
 - Write technical documentation in Simplified Technical English. Keep all prose plain and direct.
-- For web search and browsing, use the `browse` CLI. Run `browse --help` for usage.
+- For web search and browsing, use OpenCode's `browse` with the user's Chrome through its extension. Use the browse MCP server or CLI. Run `browse --help` and `browse skill` for usage. Do not install the Browserbase `browse` npm package.
 - If I name the vendor, service, or feature, use it. I have already accounted for its cost. If I do not name one, propose the options with their expected recurring cost before you build.
