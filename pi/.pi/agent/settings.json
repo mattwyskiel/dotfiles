@@ -14,7 +14,8 @@
   "packages": [
     "npm:@ff-labs/pi-fff",
     "npm:pi-claude-bridge",
-    "npm:@specode/pi-subscription-usage"
+    "npm:@specode/pi-subscription-usage",
+    "npm:@mazli/pi-ask-user-question"
   ],
   "defaultTools": [
     "+codemode"
