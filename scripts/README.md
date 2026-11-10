@@ -62,26 +62,52 @@ Updates the dotfiles repository with the latest changes from the remote.
 
 ### AWS Utilities
 
-#### `aws-sso-check.sh`
-Automatically detects and handles AWS SSO authentication.
+#### `aws-sso-check.sh` and `aws-shell.zsh`
 
-**What it does:**
-- Checks if current AWS SSO credentials are valid
-- Automatically runs `aws sso login` if credentials are expired
-- Supports multiple AWS profiles
-- Shows current AWS identity after successful authentication
-- Provides colored output for better visibility
-- **Quiet mode**: Only shows output when credentials are invalid (ideal for shell startup checks)
+The macOS and Ubuntu Zsh configurations load three functions:
 
-**Usage:**
 ```bash
-aws-sso-check.sh                    # Use default profile
-aws-sso-check.sh -p profile-name    # Use specific profile
-aws-sso-check.sh --quiet            # Quiet mode - only show output if credentials invalid
-aws-sso-check.sh --help             # Show help
+aws sts get-caller-identity          # Check credentials, then run the command once
+awscheck                            # Check credentials without running an operation
+awscheck -p barnaba --check-only     # Never open a browser
+awsrun pulumi preview               # Check credentials before an SDK-based tool
+awsrun -p barnaba -- pulumi preview  # Select a profile for the check and the tool
 ```
 
-**Shell Alias:** `awscheck`
+The helper uses the AWS CLI credential provider to refresh temporary credentials. It does not print credentials, export keys, or copy token caches. It does not call STS on each check. Non-SSO profiles keep their existing credential provider.
+
+An interactive Zsh session can open browser sign-in when the SSO token is missing or expired. Shell startup does not contact AWS. Non-interactive shells, agents with PTYs, and CI do not open a browser. Network errors and permission errors do not start a login. Commands run once, after a successful check; the wrapper never retries an operation.
+
+For scripts, use `scripts/aws-sso-check.sh --quiet --check-only` before the tool. The script permits browser login only with `--login` and terminal input and error output. Shell functions do not affect tools launched directly by an IDE or agent. Such tools must use a current AWS SDK with SSO token-provider support, or invoke `awsrun` from Zsh.
+
+Use `command aws ...` to bypass the shell wrapper. Help, configuration, explicit sign-in/sign-out, unsigned requests, and CLI skeleton generation bypass checks automatically. `awsrun -p` removes inherited AWS access-key environment variables in its child process so they cannot override the selected profile.
+
+**One-time AWS settings:**
+
+1. In IAM Identity Center, open **Settings → Authentication → Session duration → Configure**.
+2. Set **User interactive sessions** to **3 days** (4,320 minutes). This is an instance-wide setting, not a per-device or per-permission-set setting. Leave background-session settings unchanged.
+3. Start a new SSO sign-in after saving. Existing sessions keep their original duration.
+
+Keep the shared AWS config in the refreshable form:
+
+```ini
+[profile development]
+sso_session = personal
+sso_account_id = YOUR_ACCOUNT_ID
+sso_role_name = YOUR_ROLE
+region = us-east-1
+
+[sso-session personal]
+sso_start_url = YOUR_ACCESS_PORTAL_URL
+sso_region = us-east-1
+sso_registration_scopes = sso:account:access
+```
+
+The default profile uses `[default]`; other profiles require `[profile NAME]`. Each device must authenticate separately. Do not sync `~/.aws/sso/cache`, `~/.aws/cli/cache`, or credentials files. A longer sign-in session does not make temporary AWS credentials permanent. Automatic refresh works within the sign-in window; human sign-in is still required after that window expires. External identity-provider policy can shorten the window.
+
+**Tests:** `python3 -B scripts/tests/test_aws_auth.py` uses a fake AWS CLI, including terminal and non-terminal cases. It makes no AWS requests.
+
+References: [AWS CLI SSO token provider](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html), [Identity Center session duration](https://docs.aws.amazon.com/singlesignon/latest/userguide/user-interactive-sessions.html).
 
 ## Installation and Usage
 

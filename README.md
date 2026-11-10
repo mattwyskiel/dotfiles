@@ -12,7 +12,7 @@ The goal here is to be as machine-agnostic as possible, so that I can have a sea
     - `install-dev-tools.sh`: Installs mise and the tools declared in `mise/.config/mise/config.toml`.
     - `link-dotfiles.sh`: Links common configuration and restores pinned Neovim plugins.
     - `vopen.sh`: Creates a tmux session with Neovim and terminal windows, includes Claude Code integration.
-    - `aws-sso-check.sh`: Automatically manages AWS SSO authentication with support for multiple profiles.
+    - `aws-sso-check.sh` and `aws-shell.zsh`: Refresh AWS SSO credentials before use and start sign-in only when needed in an interactive terminal.
     - `update-dotfiles.sh`: Updates the dotfiles repository from remote (aliased as `refresh`).
 - `zsh/`: Contains my `.zshrc` configuration
 - `git/`: Contains my `.gitconfig`
@@ -52,7 +52,11 @@ JavaScript/TypeScript uses TypeScript 7's built-in LSP (`tsc --lsp --stdio`) thr
 - `init` - Alias for `$HOME/dotfiles/init.sh` (re-run full setup)
 - `refresh` - Alias for `$HOME/dotfiles/scripts/update-dotfiles.sh` (pull latest changes)
 - `vopen [directory] [session_name]` - Creates/attaches to tmux session with Neovim and Claude Code
-- `awscheck [-p profile] [--quiet]` - Checks and manages AWS SSO authentication
+- `aws ...` - Checks SSO credentials before running an AWS operation in Zsh
+- `awscheck [-p profile] [--quiet] [--check-only]` - Checks and refreshes AWS SSO credentials
+- `awsrun [-p profile] [--] command ...` - Checks AWS credentials before running another tool
+
+See [AWS utilities](scripts/README.md#aws-utilities) for the three-day sign-in setting, agent behavior, and device setup.
 
 ## Herdr with cmux Shortcuts
 
