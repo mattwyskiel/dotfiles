@@ -1,113 +1,89 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Resolve credentials before a command. Never print or export credential values.
+set -euo pipefail
 
-# AWS SSO Auto-Login Script
-# Checks if AWS SSO credentials are valid and automatically logs in if needed
+profile="${AWS_PROFILE:-${AWS_DEFAULT_PROFILE:-default}}"
+quiet=false
+allow_login=false
+explicit_profile=false
 
-set -e
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-# Function to check if AWS SSO credentials are valid
-check_aws_credentials() {
-    aws sts get-caller-identity >/dev/null 2>&1
-    return $?
+usage() {
+    echo "Usage: awscheck [-p|--profile NAME] [-q|--quiet] [--login|--check-only]"
+    echo "Refresh SSO credentials. --login permits browser sign-in in a terminal."
+    echo "By default, never open a browser. --quiet suppresses success messages."
 }
 
-# Function to perform AWS SSO login
-perform_sso_login() {
-    echo -e "${YELLOW}AWS SSO credentials expired or invalid. Logging in...${NC}"
-    
-    # Check if a profile is specified
-    if [ -n "$1" ]; then
-        echo -e "${YELLOW}Logging in with profile: $1${NC}"
-        aws sso login --profile "$1"
-    else
-        echo -e "${YELLOW}Logging in with default profile${NC}"
-        aws sso login
-    fi
-    
-    # Verify login was successful
-    if check_aws_credentials; then
-        echo -e "${GREEN}AWS SSO login successful!${NC}"
-        return 0
-    else
-        echo -e "${RED}AWS SSO login failed!${NC}"
-        return 1
-    fi
-}
-
-# Main logic
-main() {
-    local profile=""
-    local quiet=false
-    
-    # Parse command line arguments
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            -p|--profile)
-                profile="$2"
-                shift 2
-                ;;
-            -q|--quiet)
-                quiet=true
-                shift
-                ;;
-            -h|--help)
-                echo "Usage: $0 [-p|--profile PROFILE_NAME] [-q|--quiet]"
-                echo "  -p, --profile    Specify AWS profile to use"
-                echo "  -q, --quiet      Only show output if credentials are invalid"
-                echo "  -h, --help       Show this help message"
-                exit 0
-                ;;
-            *)
-                echo -e "${RED}Unknown option: $1${NC}"
-                exit 1
-                ;;
-        esac
-    done
-    
-    # Set AWS profile if specified
-    if [ -n "$profile" ]; then
-        export AWS_PROFILE="$profile"
-        if [ "$quiet" = false ]; then
-            echo -e "${YELLOW}Using AWS profile: $profile${NC}"
-        fi
-    fi
-    
-    # Check current credentials
-    if [ "$quiet" = false ]; then
-        echo "Checking AWS SSO credentials..."
-    fi
-    
-    if check_aws_credentials; then
-        if [ "$quiet" = false ]; then
-            echo -e "${GREEN}AWS SSO credentials are valid!${NC}"
-            
-            # Show current identity
-            echo "Current AWS identity:"
-            aws sts get-caller-identity --output table
-        fi
-    else
-        echo -e "${YELLOW}AWS SSO credentials are expired or invalid.${NC}"
-        
-        if [ "$quiet" = true ]; then
-            echo "Run 'aws sso login' to authenticate."
-            exit 1
-        else
-            # Attempt to login
-            if perform_sso_login "$profile"; then
-                echo "Current AWS identity:"
-                aws sts get-caller-identity --output table
-            else
-                exit 1
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -p|--profile)
+            if [[ $# -lt 2 || -z "$2" || "$2" == -* ]]; then
+                echo "Missing profile name." >&2
+                exit 2
             fi
-        fi
+            profile="$2"
+            explicit_profile=true
+            shift 2
+            ;;
+        -q|--quiet) quiet=true; shift ;;
+        --login) allow_login=true; shift ;;
+        --check-only) allow_login=false; shift ;;
+        -h|--help) usage; exit 0 ;;
+        *) usage >&2; exit 2 ;;
+    esac
+done
+
+# Environment credentials take precedence unless --profile is explicit.
+if [[ "$explicit_profile" == false && -n "${AWS_ACCESS_KEY_ID:-}" ]]; then
+    exit 0
+fi
+
+export AWS_PAGER="" AWS_CLI_AUTO_PROMPT=off
+
+# Leave non-SSO credential providers to the CLI or SDK. Missing profiles are errors.
+if ! command aws configure list-profiles | grep -Fxq -- "$profile"; then
+    # A profileless provider chain can use EC2/ECS roles or web identity.
+    if [[ "$explicit_profile" == false && -z "${AWS_PROFILE:-}${AWS_DEFAULT_PROFILE:-}" ]]; then
+        exit 0
     fi
+    echo "AWS profile not found: $profile" >&2
+    exit 1
+fi
+session=$(command aws configure get sso_session --profile "$profile" 2>/dev/null || true)
+start_url=$(command aws configure get sso_start_url --profile "$profile" 2>/dev/null || true)
+if [[ -z "$session" && -z "$start_url" ]]; then
+    [[ "$quiet" == true ]] || echo "Profile '$profile' does not use SSO; no SSO check needed." >&2
+    exit 0
+fi
+
+resolve_credentials() {
+    # Discard stdout before capturing stderr: stdout contains secret credentials.
+    # shellcheck disable=SC2069
+    command aws configure export-credentials --profile "$profile" --format process \
+        --cli-connect-timeout 5 --cli-read-timeout 10 2>&1 >/dev/null
 }
 
-# Run main function with all arguments
-main "$@"
+if error=$(resolve_credentials); then
+    [[ "$quiet" == true ]] || echo "AWS credentials are ready for '$profile'." >&2
+    exit 0
+fi
+
+# Network, permission, and configuration failures must not trigger a login.
+case "$error" in
+    *"SSO session"*expired*|*"Error loading SSO Token"*"does not exist"*|*"Error when retrieving token from sso: Token has expired"*|*UnauthorizedSSOTokenError*) ;;
+    *) printf '%s\n' "$error" >&2; exit 1 ;;
+esac
+
+if [[ "$allow_login" == false || ! -t 0 || ! -t 2 || -n "${CI:-}" ]]; then
+    echo "AWS SSO sign-in required for '$profile'. Run: aws sso login --profile $profile" >&2
+    exit 1
+fi
+
+echo "AWS SSO session expired for '$profile'; opening sign-in." >&2
+# Keep browser-flow text away from command stdout (for JSON output and pipes).
+command aws sso login --profile "$profile" >&2
+if ! error=$(resolve_credentials); then
+    printf '%s\n' "$error" >&2
+    exit 1
+fi
+[[ "$quiet" == true ]] || echo "AWS credentials are ready for '$profile'." >&2
+exit 0

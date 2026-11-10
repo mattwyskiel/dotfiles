@@ -33,7 +33,7 @@ compinit
 alias init="$HOME/dotfiles/init.sh"
 alias refresh="$HOME/dotfiles/scripts/update-dotfiles.sh"
 alias vopen="$HOME/dotfiles/scripts/vopen.sh"
-alias awscheck="$HOME/dotfiles/scripts/aws-sso-check.sh"
+source "$HOME/dotfiles/scripts/aws-shell.zsh"
 
 export TURBO_UI=true
 
