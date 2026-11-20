@@ -53,15 +53,48 @@ The main agent does most work itself. The tool description limits subagents to t
 - Independent investigations in parallel.
 - A fresh-eyes review or a second opinion, optionally from another model. A review uses a fresh subagent that gets the requirements and the diff, not the author's reasoning.
 
-Subagents are read-only. Calls to `edit` and `write` fail in a child, also from codemode scripts. The tools stay declared so that the prompt cache still applies. The task message tells the child not to change files with `bash`, but the extension cannot enforce this. Do file changes in the main session, or start a separate task with `/wt`.
+Subagents are read-only, unless their [agent](#named-agents) has `write: true`. Calls to `edit` and `write` fail in a read-only child, also from codemode scripts. The tools stay declared so that the prompt cache still applies. The task message tells the child not to change files with `bash`, but the extension cannot enforce this. Do file changes in the main session, or start a separate task with `/wt`.
 
 Parameters:
 
 - `task`: the instruction. For a fresh subagent, write a self-contained brief.
-- `model`: optional `provider/id`, with an optional `:thinking` suffix. The default is the parent's model and thinking level.
+- `agent`: optional name of a [named agent](#named-agents). Fresh subagents only.
+- `model`: optional `provider/id`, with an optional `:thinking` suffix. The default is the agent's model, then the parent's model and thinking level.
 - `fork: true`: the child starts from the parent conversation at the current point. Use it for side investigations that need that conversation, not for reviews.
-- `resume`: the session path from an earlier result. The child continues with its own context.
-- `tools`, `cwd`: fresh subagents only.
+- `resume`: the session path from an earlier result. The child continues with its own context. It keeps the agent, tools, and write access of the first call.
+- `tools`: a tool allowlist. It replaces the agent's `tools`. Fresh subagents only.
+- `cwd`: fresh subagents only.
+
+### Named agents
+
+A named agent is a Markdown file that gives a subagent instructions and, optionally, a model, a tool allowlist, and write access. The tool description lists the available agents, and the model selects one with the `agent` parameter.
+
+The extension reads agents from two directories:
+
+- `~/.pi/agent/agents/*.md`: user agents, for all projects.
+- `.pi/agents/*.md` in the working directory or the nearest parent directory that has one: project agents. The extension reads them only when the project is trusted, like the rest of the project `.pi` directory.
+
+A project agent replaces a user agent with the same name.
+
+```markdown
+---
+name: reviewer                 # optional; the default is the file name without .md
+description: Reviews a diff for bugs and missing tests   # required
+model: openai-codex/gpt-6.2-sol:high                     # optional
+tools: read, grep, find, bash  # optional; a list or a comma-separated string
+write: false                   # optional; true lets the child use edit and write
+---
+
+You review code changes. Report each problem with its file path and line number.
+```
+
+The body goes into the child's task message, after the subagent rules and before the task. It does not go into the system prompt, so an agent without `model` or `tools` still reads the parent's prompt from the cache. An agent with `model` or `tools` does not.
+
+Names can use letters, digits, `.`, `_`, and `-`. Pi shows a warning at session start for each file that it cannot read. It skips these files. Changes to agent files apply to the next call. The tool description shows them after `/reload`.
+
+The settings of a resumed child are in the `subagent` field of its session header.
+
+Parallel subagents with `write: true` can change the same files. Give them separate files, or run them one at a time.
 
 The model can make several `subagent` calls in one turn to run them in parallel (at most 4 at a time). Codemode scripts can call `tools.subagent()`, which resolves to `{ output, session, model }` with the full output.
 
@@ -78,6 +111,16 @@ The model can make several `subagent` calls in one turn to run them in parallel 
 - `fork` needs a saved parent session. It is not available with `--no-session`.
 - Child sessions are in `<parent session>/subagents/`, so `pi -c` does not open them. Without a parent session file, they are in the system temporary directory.
 - Children load the same extensions and MCP servers as the parent. The child environment does not include `PI_WORKTREE_CONFIG`, so a child cannot delete the parent's worktree launch configuration.
+- A child in the parent's working directory starts with `--approve` when the parent trusts the project, also when that trust is only for the current process.
+
+### Tests
+
+The tests run the extension with the Pi modules of an installation and a fake child process. They do not call a provider. Set `PI_TEST_NODE_MODULES` to the `node_modules` directory of your Pi installation:
+
+```bash
+PI_TEST_NODE_MODULES=/path/to/pi/node_modules \
+  node --test pi/.pi/agent/extensions/tests/subagent.test.mjs
+```
 
 ## Git worktree extension
 

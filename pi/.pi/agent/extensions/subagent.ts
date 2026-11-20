@@ -1,15 +1,18 @@
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import type { AssistantMessage, Usage } from "@earendil-works/pi-ai";
 import {
+	CONFIG_DIR_NAME,
 	CURRENT_SESSION_VERSION,
 	type ExtensionAPI,
 	type ExtensionContext,
 	formatSize,
+	getAgentDir,
 	getMarkdownTheme,
+	parseFrontmatter,
 	type SessionHeader,
 	SessionManager,
 	truncateHead,
@@ -21,6 +24,8 @@ import { Type } from "typebox";
 // prompt cache) matches the parent's, but it refuses to run past the maximum depth.
 const DEPTH = Number(process.env.PI_SUBAGENT_DEPTH ?? 0) || 0;
 const MAX_DEPTH = Number(process.env.PI_SUBAGENT_MAX_DEPTH ?? 1) || 1;
+// The parent sets this for a child whose agent definition has `write: true`.
+const WRITE_ALLOWED = process.env.PI_SUBAGENT_WRITE === "1";
 const MAX_CONCURRENT = 4;
 const RESULT_MAX_BYTES = 12 * 1024;
 const RESULT_MAX_LINES = 400;
@@ -30,19 +35,51 @@ const COLLAPSED_PREVIEW_LINES = 6;
 // tools) keeps the child's tool list, and so the prompt cache, the same as the parent's.
 const WRITE_TOOLS = new Set(["edit", "write"]);
 
+const READ_ONLY_RULE = "You are read-only: do not change files, not even with bash.";
+const WRITE_RULE = "You can change files. Change only the files that the task needs.";
 const FINAL_MESSAGE_RULE =
-	"You are read-only: do not change files, not even with bash. Nobody can answer questions. Your final message is the only thing the parent agent receives. Make it complete and short: the result, the evidence (file paths with line numbers, commands and their outcome), and anything left undone. Do not restate the task or describe your process.";
+	"Nobody can answer questions. Your final message is the only thing the parent agent receives. Make it complete and short: the result, the evidence (file paths with line numbers, commands and their outcome), and anything left undone. Do not restate the task or describe your process.";
 
-// Subagent rules go in the task message, not the system prompt: an unchanged system prompt lets
-// the child's first request reuse the parent's prompt cache.
-const freshTask = (task: string) =>
-	`<subagent>\nYou are a subagent. Another agent gave you the task below. Work on your own. ${FINAL_MESSAGE_RULE}\n</subagent>\n\n${task}`;
+// Subagent rules and agent instructions go in the task message, not the system prompt: an
+// unchanged system prompt lets the child's first request reuse the parent's prompt cache.
+function freshTask(task: string, agent?: AgentDef): string {
+	const rules = `You are a subagent. Another agent gave you the task below. Work on your own. ${agent?.write ? WRITE_RULE : READ_ONLY_RULE} ${FINAL_MESSAGE_RULE}`;
+	const instructions = agent?.prompt.trim() ? `<agent name="${agent.name}">\n${agent.prompt.trim()}\n</agent>\n\n` : "";
+	return `<subagent>\n${rules}\n</subagent>\n\n${instructions}${task}`;
+}
 
 const forkTask = (task: string) =>
-	`<subagent>\nYou are now a forked subagent. The conversation above is context from the parent agent; the subagent call above is you. Do only the task below, not the parent's other work. ${FINAL_MESSAGE_RULE}\n</subagent>\n\n${task}`;
+	`<subagent>\nYou are now a forked subagent. The conversation above is context from the parent agent; the subagent call above is you. Do only the task below, not the parent's other work. ${READ_ONLY_RULE} ${FINAL_MESSAGE_RULE}\n</subagent>\n\n${task}`;
+
+/** A named subagent from `<agent-dir>/agents/*.md` or the nearest project `.pi/agents/*.md`. */
+type AgentDef = {
+	name: string;
+	description: string;
+	prompt: string;
+	tools?: string[];
+	model?: string;
+	write: boolean;
+	source: "user" | "project";
+	file: string;
+};
+
+type AgentFrontmatter = {
+	name?: unknown;
+	description?: unknown;
+	tools?: unknown;
+	model?: unknown;
+	write?: unknown;
+};
+
+type AgentDiscovery = { agents: Map<string, AgentDef>; problems: string[] };
+
+/** Settings that a resumed child must get again. They are kept in the child's session header. */
+type SubagentMeta = { agent?: string; tools?: string[]; write?: boolean };
+type SubagentHeader = SessionHeader & { subagent?: SubagentMeta };
 
 type SubagentDetails = {
 	mode: "fresh" | "fork" | "resume";
+	agent?: string;
 	model?: string;
 	session: string;
 	turns: number;
@@ -59,6 +96,9 @@ const Params = Type.Object({
 	model: Type.Optional(
 		Type.String({ description: "provider/id, optional :thinking suffix. Default: your model, which reuses your prompt cache." }),
 	),
+	agent: Type.Optional(
+		Type.String({ description: "Fresh only: a named agent from the list. It sets instructions and can set model, tools, and write access." }),
+	),
 	fork: Type.Optional(Type.Boolean({ description: "Inherit this conversation, model, and tools." })),
 	resume: Type.Optional(Type.String({ description: "Session path from an earlier subagent result, to continue it." })),
 	tools: Type.Optional(
@@ -68,6 +108,100 @@ const Params = Type.Object({
 	),
 	cwd: Type.Optional(Type.String({ description: "Fresh only: working directory." })),
 });
+
+function toolList(value: unknown): string[] | undefined {
+	if (value === undefined || value === null) return undefined;
+	const raw = Array.isArray(value) ? value : typeof value === "string" ? value.split(",") : undefined;
+	if (!raw || raw.some((tool) => typeof tool !== "string")) throw new Error("tools must be a list or a comma-separated string");
+	const tools = (raw as string[]).map((tool) => tool.trim()).filter(Boolean);
+	return tools.length ? tools : undefined;
+}
+
+function parseAgent(file: string, source: AgentDef["source"]): AgentDef {
+	const { frontmatter, body } = parseFrontmatter<AgentFrontmatter>(readFileSync(file, "utf8"));
+	const name = frontmatter.name ?? basename(file, ".md");
+	if (typeof name !== "string" || !/^[\w.-]+$/.test(name)) {
+		throw new Error("name must use only letters, digits, '.', '_', and '-'");
+	}
+	if (typeof frontmatter.description !== "string" || !frontmatter.description.trim()) {
+		throw new Error("description is required");
+	}
+	if (frontmatter.model !== undefined && (typeof frontmatter.model !== "string" || !frontmatter.model.trim())) {
+		throw new Error("model must be a string such as provider/id:high");
+	}
+	if (frontmatter.write !== undefined && typeof frontmatter.write !== "boolean") {
+		throw new Error("write must be true or false");
+	}
+	return {
+		name,
+		description: frontmatter.description.trim().replace(/\s+/g, " "),
+		prompt: body,
+		tools: toolList(frontmatter.tools),
+		model: typeof frontmatter.model === "string" ? frontmatter.model.trim() : undefined,
+		write: frontmatter.write === true,
+		source,
+		file,
+	};
+}
+
+function loadAgentDir(dir: string, source: AgentDef["source"], result: AgentDiscovery) {
+	let names: string[];
+	try {
+		names = readdirSync(dir).filter((name) => name.endsWith(".md")).sort();
+	} catch {
+		return;
+	}
+	for (const name of names) {
+		const file = join(dir, name);
+		try {
+			const agent = parseAgent(file, source);
+			result.agents.set(agent.name, agent);
+		} catch (error) {
+			result.problems.push(`${file}: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+}
+
+/** The nearest `.pi/agents` directory at or above `cwd`, so that Pi started in a subdirectory finds it. */
+function projectAgentDir(cwd: string): string | undefined {
+	for (let dir = resolve(cwd); ; dir = dirname(dir)) {
+		const candidate = join(dir, CONFIG_DIR_NAME, "agents");
+		try {
+			if (statSync(candidate).isDirectory()) return candidate;
+		} catch {}
+		if (dirname(dir) === dir) return undefined;
+	}
+}
+
+/**
+ * User agents load first; a project agent with the same name replaces the user agent. Project
+ * agents load only for a trusted project, like the rest of the project `.pi` directory.
+ */
+function discoverAgents(cwd: string, trusted: boolean): AgentDiscovery {
+	const result: AgentDiscovery = { agents: new Map(), problems: [] };
+	loadAgentDir(join(getAgentDir(), "agents"), "user", result);
+	const projectDir = trusted ? projectAgentDir(cwd) : undefined;
+	if (projectDir) loadAgentDir(projectDir, "project", result);
+	return result;
+}
+
+function agentSummary(agent: AgentDef): string {
+	const traits = [
+		agent.model && `model ${agent.model}`,
+		agent.tools && `tools ${agent.tools.join(",")}`,
+		agent.write && "can write",
+	].filter(Boolean);
+	return `${agent.name}${traits.length ? ` (${traits.join("; ")})` : ""}: ${agent.description}`;
+}
+
+function readMeta(session: string): SubagentMeta | undefined {
+	try {
+		const header = JSON.parse(readFileSync(session, "utf8").split("\n", 1)[0]) as SubagentHeader;
+		return header.subagent;
+	} catch {
+		return undefined;
+	}
+}
 
 const OutputSchema = Type.Object({
 	output: Type.String(),
@@ -166,16 +300,17 @@ function forkSession(ctx: ExtensionContext, dir: string): string {
 	return file;
 }
 
-function freshSession(ctx: ExtensionContext, dir: string, cwd: string): string {
+function freshSession(ctx: ExtensionContext, dir: string, cwd: string, meta: SubagentMeta): string {
 	const timestamp = new Date().toISOString();
 	const file = join(dir, `${timestamp.replace(/[:.]/g, "-")}_${randomUUID()}.jsonl`);
-	const header: SessionHeader = {
+	const header: SubagentHeader = {
 		type: "session",
 		version: CURRENT_SESSION_VERSION,
 		id: ctx.sessionManager.getSessionId(),
 		timestamp,
 		cwd,
 		parentSession: ctx.sessionManager.getSessionFile(),
+		...(Object.values(meta).some((value) => value !== undefined) && { subagent: meta }),
 	};
 	writeFileSync(file, `${JSON.stringify(header)}\n`);
 	return file;
@@ -196,9 +331,11 @@ function createLimiter(limit: number) {
 	};
 }
 
-function describe(models: string[]): string {
+function describe(models: string[], agents: AgentDef[]): string {
 	return [
-		"Run a task in a separate, read-only Pi agent and get back only its final message.",
+		agents.some((agent) => agent.write)
+			? "Run a task in a separate Pi agent and get back only its final message. Subagents are read-only unless their agent can write."
+			: "Run a task in a separate, read-only Pi agent and get back only its final message.",
 		"Use it only when separate context helps: (1) noisy exploration (many searches, logs, or file reads) where only a short summary matters; (2) independent investigations in parallel (several calls in one turn); (3) a fresh-eyes review or a second opinion, optionally from another model.",
 		"Do routine work and all file changes yourself.",
 		"Fresh (default): the subagent sees only `task` plus project instructions. Use fresh for reviews: give the requirements and the diff or paths, not your reasoning.",
@@ -206,6 +343,7 @@ function describe(models: string[]): string {
 		"resume: ask an earlier subagent a follow-up.",
 		"Subagents cannot start subagents.",
 		models.length ? `Models: ${models.join(", ")}.` : "",
+		agents.length ? `Agents: ${agents.map(agentSummary).join("; ")}.` : "",
 	]
 		.filter(Boolean)
 		.join(" ");
@@ -214,11 +352,11 @@ function describe(models: string[]): string {
 export default function subagentExtension(pi: ExtensionAPI) {
 	const limit = createLimiter(MAX_CONCURRENT);
 
-	const register = (models: string[]) =>
+	const register = (models: string[], agents: AgentDef[]) =>
 		pi.registerTool({
 			name: "subagent",
 			label: "Subagent",
-			description: describe(models),
+			description: describe(models, agents),
 			parameters: Params,
 			outputSchema: OutputSchema,
 			executionMode: "parallel",
@@ -229,35 +367,52 @@ export default function subagentExtension(pi: ExtensionAPI) {
 				}
 				const mode: SubagentDetails["mode"] = params.resume ? "resume" : params.fork ? "fork" : "fresh";
 				if (params.fork && params.resume) throw new Error("Use fork or resume, not both.");
-				if (mode !== "fresh" && (params.tools || params.cwd)) {
-					throw new Error("tools and cwd apply only to fresh subagents.");
+				if (mode !== "fresh" && (params.tools || params.cwd || params.agent)) {
+					throw new Error("agent, tools, and cwd apply only to fresh subagents. A resumed subagent keeps its agent and tools.");
+				}
+
+				let agent: AgentDef | undefined;
+				if (params.agent) {
+					const { agents } = discoverAgents(ctx.cwd, ctx.isProjectTrusted());
+					agent = agents.get(params.agent);
+					if (!agent) {
+						const names = [...agents.keys()].join(", ") || "none";
+						throw new Error(`No agent named "${params.agent}". Available: ${names}.`);
+					}
 				}
 
 				const cwd = params.cwd ? resolve(ctx.cwd, params.cwd) : ctx.cwd;
 				let session: string;
 				let task = params.task;
+				let meta: SubagentMeta = {};
 				if (mode === "resume") {
 					session = isAbsolute(params.resume!) ? params.resume! : resolve(ctx.cwd, params.resume!);
 					if (!existsSync(session)) throw new Error(`No subagent session at ${session}.`);
+					meta = readMeta(session) ?? {};
 				} else if (mode === "fork") {
 					session = forkSession(ctx, childSessionDir(ctx));
 					task = forkTask(task);
 				} else {
-					session = freshSession(ctx, childSessionDir(ctx), cwd);
-					task = freshTask(task);
+					meta = { agent: agent?.name, tools: params.tools ?? agent?.tools, write: agent?.write || undefined };
+					session = freshSession(ctx, childSessionDir(ctx), cwd, meta);
+					task = freshTask(task, agent);
 				}
 
 				const args = ["--mode", "json", "-p", "--session", session];
-				if (params.tools) args.push("--tools", params.tools.join(","));
+				// A child in the parent's directory gets the parent's trust decision, also a temporary one.
+				if (cwd === ctx.cwd && ctx.isProjectTrusted()) args.push("--approve");
+				if (meta.tools) args.push("--tools", meta.tools.join(","));
 				// Fork and fresh default to the parent's model and thinking level; resume keeps the child's.
 				const parentModel = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined;
-				const model = params.model ?? (mode === "resume" ? undefined : parentModel);
+				const chosenModel = params.model ?? agent?.model;
+				const model = chosenModel ?? (mode === "resume" ? undefined : parentModel);
 				if (model) args.push("--model", model);
-				if (!params.model && mode !== "resume" && ctx.thinkingLevel) args.push("--thinking", ctx.thinkingLevel);
+				if (!chosenModel && mode !== "resume" && ctx.thinkingLevel) args.push("--thinking", ctx.thinkingLevel);
 				args.push(task);
 
 				const details: SubagentDetails = {
 					mode,
+					agent: meta.agent,
 					model,
 					session,
 					turns: 0,
@@ -275,6 +430,8 @@ export default function subagentExtension(pi: ExtensionAPI) {
 					});
 
 				const env: NodeJS.ProcessEnv = { ...process.env, PI_SUBAGENT_DEPTH: String(DEPTH + 1) };
+				if (meta.write) env.PI_SUBAGENT_WRITE = "1";
+				else delete env.PI_SUBAGENT_WRITE;
 				// The parent owns its worktree launch config; a child must not delete it on shutdown.
 				delete env.PI_WORKTREE_CONFIG;
 
@@ -370,6 +527,7 @@ export default function subagentExtension(pi: ExtensionAPI) {
 				const firstLine = (args.task ?? "").split("\n")[0];
 				const preview = firstLine.length > 80 ? `${firstLine.slice(0, 80)}…` : firstLine;
 				let text = theme.fg("toolTitle", theme.bold("subagent ")) + theme.fg("muted", mode);
+				if (args.agent) text += ` ${theme.fg("accent", args.agent)}`;
 				if (args.model) text += ` ${theme.fg("accent", args.model)}`;
 				return new Text(`${text} ${theme.fg("dim", preview)}`, 0, 0);
 			},
@@ -395,22 +553,26 @@ export default function subagentExtension(pi: ExtensionAPI) {
 			},
 		});
 
-	register([]);
+	register([], []);
 
 	// Nested calls from codemode scripts also pass through tool_call, so this covers them too.
-	if (DEPTH > 0) {
+	if (DEPTH > 0 && !WRITE_ALLOWED) {
 		pi.on("tool_call", (event) => {
 			if (!WRITE_TOOLS.has(event.toolName)) return undefined;
 			return { block: true, reason: "Subagents are read-only. Report the change you would make instead." };
 		});
 	}
 
-	// List the session's scoped models in the description. Children compute the same list, so
-	// their tool declarations still match the parent's.
+	// List the session's scoped models and the available agents in the description. Children in
+	// the same directory compute the same lists, so their tool declarations match the parent's.
 	pi.on("session_start", (_event, ctx) => {
 		const models = ctx.scopedModels.map(
 			({ model, thinkingLevel }) => `${model.provider}/${model.id}${thinkingLevel ? `:${thinkingLevel}` : ""}`,
 		);
-		if (models.length) register(models);
+		const { agents, problems } = discoverAgents(ctx.cwd, ctx.isProjectTrusted());
+		if (models.length || agents.size) register(models, [...agents.values()]);
+		if (problems.length && DEPTH === 0 && ctx.hasUI) {
+			ctx.ui.notify(`Skipped subagent agent definitions:\n${problems.join("\n")}`, "warning");
+		}
 	});
 }
