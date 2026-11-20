@@ -126,16 +126,16 @@ PI_TEST_NODE_MODULES=/path/to/pi/node_modules \
 
 `git-worktree.ts` provides:
 
-- `/wt [--base <ref>] [--model <provider/id>] [--no-prompt] [--no-pr] [task]` (alias: `/worktree`) to create a task branch and worktree.
+- `/wt [--base <ref>] [--model <provider/id>] [--no-prompt] [--pr|--no-pr] [task]` (alias: `/worktree`) to create a task branch and worktree.
 - `/wtdone` (alias: `/worktree-done`) shows one cleanup menu: remove the worktree and keep its branch, delete both, or cancel. The menu includes the path and safety warnings; selecting an action confirms it. `--keep-branch` or `--delete-branch` replaces the menu with one confirmation. Dirty worktrees require `--force`, and the main repository cannot be removed. Deleting an unmerged branch warns about lost commits without forcing worktree removal.
 - Conversation-aware task inference. `/wt` can omit `task` when the preceding conversation establishes it. Herdr launches fork persisted sessions so the full context is retained; manual launches include the preceding conversation in their one-shot kickoff prompt.
+- Per-repository settings in `.pi/worktree.json`. See [Repository config](#repository-config).
 - GitHub issue links in the explicit or inferred task are fetched **before** naming and kickoff generation. The issue title, description, state, labels, and comments are passed to naming and preserved in the worktree handoff, including forked Herdr sessions. Local fallback names use the fetched title rather than the URL. Repeated links are fetched once; `--no-prompt` still fetches for naming. Fetch failures stop creation instead of proceeding with missing issue context.
 - A generated kebab-case `pi/...` branch and matching Human Title for the worktree's Pi session and, when available, its Herdr workspace. Existing local branches and Git ref-prefix conflicts receive a numeric suffix. A local branch named `pi` must be renamed before `/wt` can use the `pi/` namespace.
 - The new session inherits the exact active provider and model. `--model <provider/id>` overrides the model for the new session. Native CLI model options take precedence at startup. Naming still uses the source session's active model.
-- A default kickoff instruction to commit and push completed changes, open a pull request, watch it for review comments, and address actionable feedback.
-- `--no-pr` to omit the pull-request and review-watching instruction while retaining the rest of the kickoff prompt.
+- An optional kickoff instruction to commit and push completed changes, open a pull request, watch it for review comments, and address actionable feedback. It is off by default. A repository turns it on with `"pullRequest": true`. `--pr` and `--no-pr` override the repository setting for one task.
 - `--no-prompt` to keep the naming/layout behavior while opening Pi idle (no kickoff prompt, including no pull-request instruction). Useful when you only want a named worktree and will drive Pi yourself.
-- Inside Herdr, native `herdr worktree create` integration so the checkout opens as a workspace grouped with its parent repository. The workspace keeps the fixed layout: equal-width left/right columns, `nvim .` above a fresh terminal in a 70/30 left-column split, and Pi in the right column.
+- Inside Herdr, native `herdr worktree create` integration so the checkout opens as a workspace grouped with its parent repository. The workspace keeps the fixed layout: equal-width left/right columns, the editor (default `nvim .`) above a fresh terminal in a 70/30 left-column split, and Pi in the right column.
 - `/wtdone` removes Herdr-managed checkouts through `herdr worktree remove`, closing the associated workspace while preserving the existing branch-deletion choices.
 - Outside Herdr, the same branch/worktree creation without trying to spawn a multiplexer. The extension stores a one-shot handoff in the worktree's private Git metadata; the next `pi` started anywhere in that worktree restores its name/metadata and submits the kickoff prompt automatically.
 - Both launch paths apply the handoff only at process startup and delete it after success. Reloading, creating, resuming, or forking a session does not reset a user-selected name or replay kickoff. Handoffs and cleanup metadata must match the current worktree, including when its path uses a symlink. A failed model selection retains the handoff and shows an exact retry command, including the source-session fork when needed.
@@ -145,11 +145,44 @@ Examples:
 ```text
 /wt fix auth cookie refresh
 /wt https://github.com/owner/repo/issues/123
-/wt --no-pr fix https://github.com/owner/repo/issues/123 (keep the public API unchanged)
+/wt --pr fix https://github.com/owner/repo/issues/123 (keep the public API unchanged)
 /wt --no-pr investigate flaky tests
 /wt --base main --no-prompt explore package upgrades
 /wt --no-prompt
 ```
+
+### Repository config
+
+A repository can change the `/wt` workflow with `.pi/worktree.json`. The extension reads the file from the checkout where you run `/wt`. All keys are optional:
+
+```json
+{
+  "pullRequest": true,
+  "instructions": ["Run `bun run check` before each commit."],
+  "setup": ["bun install", "cp \"$PI_WORKTREE_REPO_ROOT/.env.local\" ."],
+  "githubIssues": true,
+  "herdr": { "editor": "nvim ." }
+}
+```
+
+| Key | Default | Effect |
+| --- | --- | --- |
+| `pullRequest` | `false` | Adds the instruction to push, open a pull request, and address review comments. |
+| `instructions` | `[]` | Adds each line to the kickoff prompt under "Repository instructions". |
+| `setup` | `[]` | Shell commands that run in the new worktree before Pi starts. |
+| `githubIssues` | `true` | Fetches linked GitHub issues with `gh`. Set `false` for repositories that do not use GitHub issues. |
+| `herdr.editor` | `"nvim ."` | The command for the Herdr editor pane. `null` leaves a plain shell. |
+
+Setup commands:
+
+- Run in order with `bash` and `set -e`. The first failed command stops the setup.
+- Get `PI_WORKTREE_REPO_ROOT` (the checkout where `/wt` ran), `PI_WORKTREE_PATH`, `PI_WORKTREE_BRANCH`, and `PI_WORKTREE_BASE`.
+- In Herdr, run in the Pi pane, so you can see the output. Pi starts only if the setup succeeds. Otherwise the pane shows the command to start Pi after you fix the problem.
+- Outside Herdr, run in the source Pi process before `/wt` finishes (time limit: 15 minutes). If the setup fails, the worktree and its handoff stay. `/wt` shows the last lines of the output.
+
+The config can run commands, so the extension reads it only when Pi trusts the project. In an untrusted project, `/wt` shows a warning and uses the defaults. Unknown keys and wrong types stop `/wt` with an error, so typing errors do not go unnoticed.
+
+`--no-prompt` removes the full kickoff prompt, including repository instructions. Setup still runs.
 
 ### Dependencies
 
@@ -166,7 +199,7 @@ Naming makes one request with provider-neutral minimal reasoning and a 60-second
 
 JSON names may be wrapped in Markdown or prose. Private thinking is not parsed. Failed, aborted, truncated, or invalid responses use local branch and session names together and show a warning. With no active model, local naming needs no provider call.
 
-The offline tests cover the provider-neutral call contract, naming responses and failures, exact model selection, both launch paths, session-name preservation, and cleanup safety. An additional suite uses the installed Pi runtime with fake native and legacy providers. It checks keyless, header-only, ambient, and endpoint authentication plus virtual-model routing. Neither suite contacts live providers. Live provider availability and credentials still require a local check.
+The offline tests cover the provider-neutral call contract, naming responses and failures, exact model selection, both launch paths, repository config, setup, session-name preservation, and cleanup safety. An additional suite uses the installed Pi runtime with fake native and legacy providers. It checks keyless, header-only, ambient, and endpoint authentication plus virtual-model routing. Neither suite contacts live providers. Live provider availability and credentials still require a local check.
 
 Herdr's `--fork` reads the saved source session. If tree navigation changed only the in-memory leaf, the saved session can point to a different branch of the conversation. This is a separate handoff limit, not a naming-provider limit.
 

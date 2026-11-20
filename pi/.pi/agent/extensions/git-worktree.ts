@@ -68,6 +68,75 @@ type WorktreeListEntry = {
 	branch?: string;
 };
 
+/**
+ * Per-repository settings from `.pi/worktree.json` in the checkout where /wt
+ * runs. The global defaults keep only the essential workflow; repositories opt
+ * in to pull-request follow-up, extra kickoff instructions, and setup commands.
+ */
+type RepoWorktreeConfig = {
+	pullRequest: boolean;
+	instructions: string[];
+	setup: string[];
+	githubIssues: boolean;
+	editor?: string;
+};
+
+const REPO_CONFIG_PATH = ".pi/worktree.json";
+
+function defaultRepoConfig(): RepoWorktreeConfig {
+	return { pullRequest: false, instructions: [], setup: [], githubIssues: true, editor: "nvim ." };
+}
+
+function parseRepoConfig(value: unknown): RepoWorktreeConfig {
+	if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("config must be a JSON object");
+	const raw = value as Record<string, unknown>;
+	const config = defaultRepoConfig();
+	for (const key of Object.keys(raw)) {
+		if (!["$schema", "pullRequest", "instructions", "setup", "githubIssues", "herdr"].includes(key)) {
+			throw new Error(`unknown key: ${key}`);
+		}
+	}
+	for (const key of ["pullRequest", "githubIssues"] as const) {
+		if (raw[key] === undefined) continue;
+		if (typeof raw[key] !== "boolean") throw new Error(`${key} must be true or false`);
+		config[key] = raw[key];
+	}
+	for (const key of ["instructions", "setup"] as const) {
+		if (raw[key] === undefined) continue;
+		const list = raw[key];
+		if (!Array.isArray(list) || list.some((item) => typeof item !== "string" || !item.trim())) {
+			throw new Error(`${key} must be an array of non-empty strings`);
+		}
+		config[key] = list as string[];
+	}
+	if (raw.herdr !== undefined) {
+		const herdr = raw.herdr as Record<string, unknown> | null;
+		if (!herdr || typeof herdr !== "object" || Array.isArray(herdr)) throw new Error("herdr must be an object");
+		for (const key of Object.keys(herdr)) if (key !== "editor") throw new Error(`unknown key: herdr.${key}`);
+		if (herdr.editor !== undefined) {
+			if (herdr.editor !== null && typeof herdr.editor !== "string") throw new Error("herdr.editor must be a string or null");
+			config.editor = herdr.editor?.trim() || undefined;
+		}
+	}
+	return config;
+}
+
+/** Repository config can run commands, so read it only for trusted projects. */
+async function loadRepoConfig(checkout: string, ctx: ExtensionCommandContext): Promise<RepoWorktreeConfig> {
+	const configPath = join(checkout, REPO_CONFIG_PATH);
+	if (!existsSync(configPath)) return defaultRepoConfig();
+	if (!ctx.isProjectTrusted()) {
+		ctx.ui.notify(`Ignoring ${configPath} because this project is not trusted.`, "warning");
+		return defaultRepoConfig();
+	}
+	try {
+		return parseRepoConfig(JSON.parse(await readFile(configPath, "utf8")) as unknown);
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		throw new Error(`Invalid ${configPath}: ${message}`);
+	}
+}
+
 const PENDING_LAUNCH_CONFIG_NAME = "pi-worktree-launch.json";
 
 async function run(command: string, args: string[], cwd?: string): Promise<ExecResult> {
@@ -83,7 +152,9 @@ async function git(args: string[], cwd: string): Promise<string> {
 async function fetchGitHubIssueContext(
 	task: string,
 	ctx: ExtensionCommandContext,
+	enabled = true,
 ): Promise<{ context: string; fallbackTask: string }> {
+	if (!enabled) return { context: "", fallbackTask: task };
 	const urls = [...new Set(
 		[...task.matchAll(/https?:\/\/github\.com\/([A-Za-z0-9-]+)\/([A-Za-z0-9_.-]+)\/issues\/([1-9][0-9]*)(?=$|[\s/?#)\]}>.,:;!"'])/gi)]
 			.map((match) => `https://github.com/${match[1]}/${match[2]}/issues/${match[3]}`),
@@ -361,12 +432,12 @@ async function uniqueBranchName(repoRoot: string, slug: string): Promise<string>
 	return branch;
 }
 
-function parseArgs(args: string): { base?: string; model?: string; noPrompt: boolean; noPr: boolean; task: string } {
+function parseArgs(args: string): { base?: string; model?: string; noPrompt: boolean; pr?: boolean; task: string } {
 	const tokens = args.trim().match(/(?:[^"\s]+|"[^"]*"|'[^']*')+/g) ?? [];
 	let base: string | undefined;
 	let model: string | undefined;
 	let noPrompt = false;
-	let noPr = false;
+	let pr: boolean | undefined;
 	const taskParts: string[] = [];
 
 	for (let index = 0; index < tokens.length; index += 1) {
@@ -375,8 +446,8 @@ function parseArgs(args: string): { base?: string; model?: string; noPrompt: boo
 			noPrompt = true;
 			continue;
 		}
-		if (token === "--no-pr") {
-			noPr = true;
+		if (token === "--pr" || token === "--no-pr") {
+			pr = token === "--pr";
 			continue;
 		}
 		if (token === "--model" || token.startsWith("--model=")) {
@@ -402,7 +473,7 @@ function parseArgs(args: string): { base?: string; model?: string; noPrompt: boo
 		base,
 		model,
 		noPrompt,
-		noPr,
+		pr,
 		task: taskParts.join(" ").trim().replace(/^['"]|['"]$/g, ""),
 	};
 }
@@ -411,7 +482,8 @@ function kickoffPrompt(
 	task: string,
 	conversation: ConversationContext,
 	sourceSession?: string,
-	openPr = true,
+	openPr = false,
+	instructions: string[] = [],
 ): string {
 	const lines = [
 		"Continue this coding task in the new git worktree.",
@@ -422,6 +494,9 @@ function kickoffPrompt(
 		"Inspect the worktree state, then continue the requested implementation without asking the user to repeat context.",
 	];
 
+	if (instructions.length) {
+		lines.push("Repository instructions:", ...instructions.map((instruction) => `- ${instruction}`));
+	}
 	if (openPr) {
 		lines.push("When the implementation is ready, commit and push the changes, open a pull request, then watch the pull request for review comments and address actionable feedback.");
 	}
@@ -543,6 +618,40 @@ function piCommand(metadata: WorktreeMetadata, configPath: string, sourceSession
 	return `cd ${shellQuote(metadata.worktreePath)} && PI_WORKTREE_CONFIG=${shellQuote(configPath)} pi${forkArgument}`;
 }
 
+/**
+ * Write repository setup commands to a one-shot script. The script deletes
+ * itself, runs in the new worktree, and stops at the first failed command.
+ */
+async function createSetupScript(metadata: WorktreeMetadata, setup: string[]): Promise<string | undefined> {
+	if (!setup.length) return undefined;
+	const scriptPath = join(tmpdir(), `pi-worktree-setup-${process.pid}-${Date.now()}.sh`);
+	const script = [
+		"#!/usr/bin/env bash",
+		"set -e",
+		'rm -f -- "$0"',
+		`export PI_WORKTREE_REPO_ROOT=${shellQuote(metadata.repoRoot)}`,
+		`export PI_WORKTREE_PATH=${shellQuote(metadata.worktreePath)}`,
+		`export PI_WORKTREE_BRANCH=${shellQuote(metadata.branch)}`,
+		`export PI_WORKTREE_BASE=${shellQuote(metadata.baseRef)}`,
+		`cd ${shellQuote(metadata.worktreePath)}`,
+		...setup,
+	].join("\n");
+	await writeFile(scriptPath, `${script}\n`, { mode: 0o700 });
+	await chmod(scriptPath, 0o700);
+	return scriptPath;
+}
+
+/** Run setup in this process when no multiplexer pane can show its output. */
+async function runSetupScript(scriptPath: string, cwd: string): Promise<void> {
+	try {
+		await execFile("bash", [scriptPath], { cwd, timeout: 15 * 60_000, maxBuffer: 16 * 1024 * 1024 });
+	} catch (error) {
+		const { stdout = "", stderr = "", message } = error as Error & { stdout?: string; stderr?: string };
+		const output = `${stdout}\n${stderr}`.trim().split("\n").slice(-20).join("\n");
+		throw new Error(output || message);
+	}
+}
+
 function isHerdrEnvironment(): boolean {
 	return process.env.HERDR_ENV === "1" && Boolean(process.env.HERDR_WORKSPACE_ID);
 }
@@ -557,9 +666,10 @@ function parseHerdrResponse<T>(stdout: string, command: string): T {
 
 async function openHerdrWorkspace(
 	metadata: WorktreeMetadata,
-	prompt?: string,
-	sourceSession?: string,
-	model?: WorktreeModel,
+	prompt: string | undefined,
+	sourceSession: string | undefined,
+	model: WorktreeModel | undefined,
+	repoConfig: RepoWorktreeConfig,
 ): Promise<WorktreeMetadata> {
 	const sourceWorkspaceId = process.env.HERDR_WORKSPACE_ID;
 	if (!sourceWorkspaceId) throw new Error("HERDR_WORKSPACE_ID is unavailable");
@@ -588,7 +698,9 @@ async function openHerdrWorkspace(
 
 	const herdrMetadata = { ...metadata, herdrWorkspaceId: workspaceId };
 	const configPath = await createLaunchConfig(herdrMetadata, prompt, sourceSession, model);
+	let setupPath: string | undefined;
 	try {
+		setupPath = await createSetupScript(herdrMetadata, repoConfig.setup);
 		// Herdr's native worktree command groups this workspace with its source.
 		// Build the familiar 70/30 editor-shell column beside a same-width Pi pane.
 		const { stdout: piSplitStdout } = await run("herdr", [
@@ -623,14 +735,20 @@ async function openHerdrWorkspace(
 		const shellPaneId = shellSplit.result?.pane?.pane_id;
 		if (!shellPaneId) throw new Error("herdr pane split did not return the shell pane ID");
 
-		await run("herdr", ["pane", "rename", editorPaneId, "Editor"]);
+		await run("herdr", ["pane", "rename", editorPaneId, repoConfig.editor ? "Editor" : "Shell"]);
 		await run("herdr", ["pane", "rename", shellPaneId, "Terminal"]);
 		await run("herdr", ["pane", "rename", piPaneId, "Pi"]);
-		await run("herdr", ["pane", "run", editorPaneId, "nvim ."]);
-		await run("herdr", ["pane", "run", piPaneId, piCommand(herdrMetadata, configPath, sourceSession)]);
+		if (repoConfig.editor) await run("herdr", ["pane", "run", editorPaneId, repoConfig.editor]);
+		// Setup output stays visible in the Pi pane, and Pi starts only after it succeeds.
+		const launch = piCommand(herdrMetadata, configPath, sourceSession);
+		const paneCommand = setupPath
+			? `cd ${shellQuote(herdrMetadata.worktreePath)} && if bash ${shellQuote(setupPath)}; then ${launch}; else echo ${shellQuote(`Worktree setup failed. Fix it, then run: ${launch}`)}; fi`
+			: launch;
+		await run("herdr", ["pane", "run", piPaneId, paneCommand]);
 		return herdrMetadata;
 	} catch (error) {
 		await unlink(configPath).catch(() => undefined);
+		if (setupPath) await unlink(setupPath).catch(() => undefined);
 		throw error;
 	}
 }
@@ -828,11 +946,11 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 
 	async function handler(args: string, ctx: ExtensionCommandContext) {
 		try {
-			const { base, model: modelSpec, noPrompt, noPr, task: explicitTask } = parseArgs(args);
+			const { base, model: modelSpec, noPrompt, pr, task: explicitTask } = parseArgs(args);
 			const conversation = conversationContext(ctx);
 			const taskSeed = explicitTask || conversation.inferredTask;
 			if (!taskSeed) {
-				ctx.ui.notify("Usage: /wt [--base <ref>] [--model <provider/id>] [--no-prompt] [--no-pr] [task] (task may be inferred from the preceding conversation)", "error");
+				ctx.ui.notify("Usage: /wt [--base <ref>] [--model <provider/id>] [--no-prompt] [--pr|--no-pr] [task] (task may be inferred from the preceding conversation)", "error");
 				return;
 			}
 			const selectedModel = modelSpec === undefined ? ctx.model : ctx.modelRegistry.getAll()
@@ -840,9 +958,10 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 			if (modelSpec !== undefined && !selectedModel) throw new Error(`Unknown worktree model: ${modelSpec}. Use --model <provider/model-id>.`);
 			const model = selectedModel ? { provider: selectedModel.provider, id: selectedModel.id } : undefined;
 			const repoRoot = await git(["rev-parse", "--show-toplevel"], ctx.cwd);
+			const repoConfig = await loadRepoConfig(repoRoot, ctx);
 			const currentBranch = await git(["branch", "--show-current"], repoRoot);
 			const baseRef = (base ?? currentBranch) || "HEAD";
-			const issue = await fetchGitHubIssueContext(taskSeed, ctx);
+			const issue = await fetchGitHubIssueContext(taskSeed, ctx, repoConfig.githubIssues);
 			const identityContext = [
 				conversation.transcript && `Preceding conversation:\n${conversation.transcript}`,
 				explicitTask && `Explicit /wt task:\n${explicitTask}`,
@@ -864,15 +983,33 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 			const sourceSession = inHerdr
 				? await resolveForkableSourceSession(ctx.sessionManager.getSessionFile())
 				: undefined;
-			const prompt = noPrompt ? undefined : kickoffPrompt(task, conversation, sourceSession, !noPr);
+			const prompt = noPrompt
+				? undefined
+				: kickoffPrompt(task, conversation, sourceSession, pr ?? repoConfig.pullRequest, repoConfig.instructions);
 
 			ctx.ui.notify(`Creating ${identity.title} (${branch}) from ${baseRef}${noPrompt ? " without kickoff prompt" : ""}...`, "info");
 			if (inHerdr) {
-				const opened = await openHerdrWorkspace(metadata, prompt, sourceSession, model);
+				const opened = await openHerdrWorkspace(metadata, prompt, sourceSession, model, repoConfig);
 				ctx.ui.notify(`Opened Herdr workspace ${opened.herdrWorkspaceId}: ${worktreePath}`, "info");
 			} else {
 				await git(["worktree", "add", "-b", branch, worktreePath, baseRef], repoRoot);
 				await createPendingLaunchConfig(metadata, prompt, model);
+				const setupPath = await createSetupScript(metadata, repoConfig.setup);
+				if (setupPath) {
+					ctx.ui.notify(`Running worktree setup in ${worktreePath}...`, "info");
+					try {
+						await runSetupScript(setupPath, worktreePath);
+					} catch (error) {
+						await unlink(setupPath).catch(() => undefined);
+						const message = error instanceof Error ? error.message : String(error);
+						ctx.ui.notify([
+							`Created worktree ${worktreePath}, but setup failed:`,
+							message,
+							`Fix the setup, then open it with: cd ${shellQuote(worktreePath)} && pi`,
+						].join("\n"), "error");
+						return;
+					}
+				}
 				ctx.ui.notify([
 					`Created worktree: ${worktreePath}`,
 					`Open it with: cd ${shellQuote(worktreePath)} && pi`,
@@ -951,7 +1088,7 @@ export default function gitWorktreeExtension(pi: ExtensionAPI) {
 	}
 
 	pi.registerCommand("wt", {
-		description: "Continue a task in a conversation-aware git worktree. Fetches linked GitHub issues before naming and kickoff. Opens a grouped three-pane Herdr workspace; elsewhere, the next Pi launched in the worktree starts automatically. Inherits the current model; use --model <provider/id> to override it. Use --no-pr to skip PR follow-up or --no-prompt to open idle Pi.",
+		description: "Continue a task in a conversation-aware git worktree. Fetches linked GitHub issues before naming and kickoff. Opens a grouped three-pane Herdr workspace; elsewhere, the next Pi launched in the worktree starts automatically. Inherits the current model; use --model <provider/id> to override it. Reads repository settings from .pi/worktree.json. Use --pr or --no-pr to override PR follow-up, or --no-prompt to open idle Pi.",
 		handler,
 	});
 

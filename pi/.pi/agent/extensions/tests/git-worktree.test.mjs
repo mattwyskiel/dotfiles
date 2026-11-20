@@ -28,9 +28,15 @@ const otherModel = { provider: "other-provider", id: "org/other-model" };
 
 function harness({ model = false, messages = [], herdr = false, ghError, ghOutput, cleanup,
 	argv = [], availableModels = [activeModel, otherModel], modelAuth = true,
-	modelResponse, modelError, refs = [], entries = [], branchEntries = entries, pathAliases = {}, missingPaths = [] } = {}) {
+	modelResponse, modelError, refs = [], entries = [], branchEntries = entries, pathAliases = {}, missingPaths = [],
+	repoConfig, trusted = true, setupError } = {}) {
 	const calls = [];
 	const files = new Map();
+	// Repository files are separate so handoff assertions still find the only launch config.
+	const repoFiles = new Map();
+	if (repoConfig !== undefined) {
+		repoFiles.set("/repo/.pi/worktree.json", typeof repoConfig === "string" ? repoConfig : JSON.stringify(repoConfig));
+	}
 	const notifications = [];
 	const commands = new Map();
 	const events = new Map();
@@ -75,6 +81,8 @@ function harness({ model = false, messages = [], herdr = false, ghError, ghOutpu
 				workspace: { workspace_id: "new-workspace" }, root_pane: { pane_id: "editor" },
 			} });
 			else if (args[1] === "split") stdout = JSON.stringify({ result: { pane: { pane_id: "new-pane" } } });
+		} else if (command === "bash" && setupError) {
+			error = Object.assign(new Error("Command failed: bash"), { stdout: "installing\n", stderr: setupError });
 		}
 		callback(error, stdout, "");
 	}
@@ -94,10 +102,11 @@ function harness({ model = false, messages = [], herdr = false, ghError, ghOutpu
 		},
 		execFileCallback,
 		promisify,
-		existsSync: (path) => files.has(path),
+		existsSync: (path) => files.has(path) || repoFiles.has(path),
 		mkdir: async () => {},
 		chmod: async () => {},
 		readFile: async (path) => {
+			if (repoFiles.has(path)) return repoFiles.get(path);
 			if (!files.has(path)) throw new Error("File not found");
 			return files.get(path);
 		},
@@ -146,6 +155,7 @@ function harness({ model = false, messages = [], herdr = false, ghError, ghOutpu
 			getSessionFile: () => herdr ? sessionFile : undefined,
 		},
 		shutdown: () => { shutdown = true; },
+		isProjectTrusted: () => trusted,
 		ui: {
 			notify: (message, level) => notifications.push({ message, level }),
 			select: async (title, options) => {
@@ -173,6 +183,7 @@ function harness({ model = false, messages = [], herdr = false, ghError, ghOutpu
 		get modelContext() { return modelContext; },
 		run: (args, command = "wt") => commands.get(command).handler(args, ctx),
 		config: () => JSON.parse([...files.entries()].find(([path]) => path.endsWith(".json"))[1]),
+		setupScript: () => [...files.entries()].find(([path]) => path.includes("pi-worktree-setup-"))?.[1],
 	};
 }
 
@@ -488,14 +499,104 @@ test("fetch completes before model naming and all issue data reaches manual hand
 		["issue", "view", issueUrl, "--json", "number,title,body,state,url,labels,comments"]);
 });
 
-test("local fallback uses issue title instead of URL; default PR behavior remains", async () => {
+test("local fallback uses issue title instead of URL; PR follow-up is off by default", async () => {
 	const app = harness();
 	await app.run(issueUrl);
 	const config = app.config();
 	assert.equal(config.metadata.branch, "pi/fix-auth-cookie-refresh");
 	assert.equal(config.sessionName, "Fix Auth Cookie Refresh");
 	assertIssueContext(config.prompt);
-	assert.ok(config.prompt.includes("open a pull request"));
+	assert.ok(!config.prompt.includes("open a pull request"));
+});
+
+for (const [repoConfig, args, expected] of [
+	[undefined, "--pr", true],
+	[{ pullRequest: true }, "", true],
+	[{ pullRequest: true }, "--no-pr", false],
+	[{ pullRequest: false }, "--pr", true],
+]) {
+	test(`PR follow-up: config=${JSON.stringify(repoConfig)}, flags=${args || "none"}`, async () => {
+		const app = harness({ repoConfig });
+		await app.run(`${args} fix auth refresh`);
+		assert.equal(app.config().prompt.includes("open a pull request"), expected);
+	});
+}
+
+test("repository instructions are added to the kickoff prompt", async () => {
+	const app = harness({ repoConfig: { instructions: ["Run bun run check before each commit."] } });
+	await app.run("fix auth refresh");
+	assert.ok(app.config().prompt.includes("Repository instructions:\n- Run bun run check before each commit."));
+});
+
+test("untrusted projects ignore repository config with a warning", async () => {
+	const app = harness({ trusted: false, repoConfig: { pullRequest: true, setup: ["bun install"] } });
+	await app.run("fix auth refresh");
+	assert.ok(!app.config().prompt.includes("open a pull request"));
+	assert.ok(!app.calls.some((call) => call.command === "bash"));
+	assert.ok(app.notifications.some(({ message, level }) => level === "warning" && message.includes("not trusted")));
+});
+
+for (const repoConfig of ["not json", "[]", { pullRequest: "yes" }, { setup: "bun install" }, { setup: [""] },
+	{ unknown: true }, { herdr: { editor: 1 } }, { herdr: { layout: "wide" } }]) {
+	test(`invalid repository config stops creation: ${JSON.stringify(repoConfig)}`, async () => {
+		const app = harness({ repoConfig });
+		await app.run("fix auth refresh");
+		assert.equal(app.files.size, 0);
+		assert.ok(!app.calls.some((call) => call.command === "git" && call.args[0] === "worktree"));
+		assert.ok(app.notifications.some(({ message, level }) => level === "error" && message.includes("Invalid /repo/.pi/worktree.json")));
+	});
+}
+
+test("githubIssues: false leaves issue links unfetched", async () => {
+	const app = harness({ repoConfig: { githubIssues: false } });
+	await app.run(issueUrl);
+	assert.ok(!app.calls.some((call) => call.command === "gh"));
+	assert.ok(app.config().metadata.task.includes(issueUrl));
+});
+
+test("manual setup runs after worktree creation with worktree variables", async () => {
+	const app = harness({ model: true, repoConfig: { setup: ["bun install", 'cp "$PI_WORKTREE_REPO_ROOT/.env" .'] } });
+	await app.run("fix auth refresh");
+	const add = app.calls.findIndex((call) => call.command === "git" && call.args[0] === "worktree" && call.args[1] === "add");
+	const setup = app.calls.findIndex((call) => call.command === "bash");
+	assert.ok(add >= 0 && setup > add);
+	assert.equal(app.calls[setup].options.cwd, "/repo-worktrees/refresh-auth-cookie");
+	const script = app.setupScript();
+	assert.ok(script.includes("set -e"));
+	assert.ok(script.includes("export PI_WORKTREE_REPO_ROOT='/repo'"));
+	assert.ok(script.includes("export PI_WORKTREE_BRANCH='pi/refresh-auth-cookie'"));
+	assert.ok(script.endsWith('bun install\ncp "$PI_WORKTREE_REPO_ROOT/.env" .\n'));
+	assert.ok(app.notifications.some(({ message }) => message.includes("Created worktree")));
+});
+
+test("manual setup failure keeps the handoff and shows the output", async () => {
+	const app = harness({ repoConfig: { setup: ["bun install"] }, setupError: "lockfile is out of date" });
+	await app.run("fix auth refresh");
+	assert.ok(app.config().prompt, "The pending handoff stays available after setup is fixed");
+	const error = app.notifications.find(({ level }) => level === "error").message;
+	assert.ok(error.includes("setup failed"));
+	assert.ok(error.includes("lockfile is out of date"));
+	assert.ok(error.includes("&& pi"));
+});
+
+test("Herdr setup runs in the Pi pane before Pi, with a configurable editor", async () => {
+	const app = harness({ herdr: true, repoConfig: { setup: ["bun install"], herdr: { editor: "hx ." } } });
+	await app.run("fix auth refresh");
+	assert.ok(!app.calls.some((call) => call.command === "bash"), "Herdr setup must not block the source Pi");
+	const runs = app.calls.filter((call) => call.command === "herdr" && call.args[1] === "run");
+	assert.deepEqual(Array.from(runs[0].args), ["pane", "run", "editor", "hx ."]);
+	const launch = runs[1].args[3];
+	assert.match(launch, /^cd '[^']+' && if bash '\/tmp\/pi-worktree-setup-[^']+'; then cd .* PI_WORKTREE_CONFIG=.* pi --fork .*; else echo .*Worktree setup failed.*; fi$/);
+	assert.ok(app.setupScript().includes("bun install"));
+});
+
+test("Herdr editor can be disabled", async () => {
+	const app = harness({ herdr: true, repoConfig: { herdr: { editor: null } } });
+	await app.run("fix auth refresh");
+	const runs = app.calls.filter((call) => call.command === "herdr" && call.args[1] === "run");
+	assert.equal(runs.length, 1);
+	assert.ok(runs[0].args[3].includes("PI_WORKTREE_CONFIG="));
+	assert.ok(app.calls.some((call) => call.command === "herdr" && call.args[1] === "rename" && call.args[3] === "Shell"));
 });
 
 test("--no-prompt still fetches and retains enriched task metadata, but opens idle", async () => {
