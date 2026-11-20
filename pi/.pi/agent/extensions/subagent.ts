@@ -134,7 +134,8 @@ function parseAgent(file: string, source: AgentDef["source"]): AgentDef {
 	}
 	return {
 		name,
-		description: frontmatter.description.trim().replace(/\s+/g, " "),
+		// describe() ends the agent list with its own period.
+		description: frontmatter.description.trim().replace(/\s+/g, " ").replace(/\.$/, ""),
 		prompt: body,
 		tools: toolList(frontmatter.tools),
 		model: typeof frontmatter.model === "string" ? frontmatter.model.trim() : undefined,
