@@ -1,7 +1,7 @@
 # Agent guidelines
 
 - Many tools and libraries I use are newer than your training data. Check the installed version's docs or official documentation before you rely on an API, flag, or config key.
-- Commit each logical change on the current branch as you go, including my changes. Split large diffs into focused commits. Do not push unless I ask.
+- Commit each logical change on the current branch as you go, including my changes. Split large diffs into focused commits.
 - Scaffold new projects and components with the official generator (`bun create`, `npx create-next-app`, `pulumi new`, `shadcn add`, and similar), then customize.
 - Write technical documentation in Simplified Technical English. Keep all prose plain and direct.
 - For web search and browsing, use OpenCode's `browse` with the user's Chrome through its extension. Use the browse MCP server or CLI. Run `browse --help` and `browse skill` for usage. Do not install the Browserbase `browse` npm package.
