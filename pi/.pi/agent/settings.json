@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "1.5.2",
+  "lastChangelogVersion": "1.6.0",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-6.2-sol",
   "defaultThinkingLevel": "high",
@@ -18,7 +18,9 @@
     "npm:@specode/pi-subscription-usage",
     "npm:@mazli/pi-ask-user-question"
   ],
-  "defaultTools": ["+codemode"],
+  "defaultTools": [
+    "+codemode"
+  ],
   "extensionChangelogVersions": {
     "{\"source\":\"npm:@mazli/pi-ask-user-question\",\"scope\":\"user\"}": "1.3.7"
   }
